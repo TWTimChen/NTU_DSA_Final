@@ -1,8 +1,18 @@
-run: mailDB main.cpp 
-	g++ -std=c++11 main.cpp mailDB.o -o $@
+CXX=g++
+CFLAGS= -Wall -std=c++11
+EXEC=run
 
-mailDB: mailDB.h mailDB.cpp 
-	g++ -std=c++11 mailDB.cpp -c
+all: run
+
+debug: CFLAGS += -DDEBUG
+debug: clean
+debug: run
+
+run: mailDB.o 
+	$(CXX) $(CFLAGS) main.cpp mailDB.o -o $(EXEC)
+
+mailDB.o: mailDB.cpp
+	$(CXX) -c $(CFLAGS) mailDB.cpp
 
 clean:
-	rm -f mailDB.o run
+	rm -f $(EXEC) *.o

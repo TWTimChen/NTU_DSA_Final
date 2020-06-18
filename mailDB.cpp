@@ -54,7 +54,9 @@ MailDB::add(string& path)
         cout << endl;
 
         // check mail information
+        #ifdef DEBUG
         mail->print(); 
+        #endif
 
         // TO-Do:
         // Insert the new mail in to the container
@@ -110,9 +112,9 @@ MailDB::readfile(string& path, Mail* mail)
     split(inputLine, lineSplit);
     
     string date;
-    date = lineSplit[3];                       // year
+    date = lineSplit[3];                        // year
     date += getMonthIndex(lineSplit[2]);        // month (in util.h)
-    date += lineSplit[1];                        // day
+    date += lineSplit[1];                       // day
     lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
     date += lineSplit[5];                       // hour minite
     
@@ -155,6 +157,7 @@ void
 MailDB::queryOnlyExpr(string& expr)
 {
     cout << "Execute Query :" << expr << endl;
+
 }
 
 void 

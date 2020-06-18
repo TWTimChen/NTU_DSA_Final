@@ -54,15 +54,19 @@ public:
 private:
     // We may need more member data or function hear
 
-    // These two private function is for two query situation
+    // [add]
+    bool checkId(std::string& path);
+    void readfile(std::string& path, Mail* mail);
+
+    // [query]
     // 1. query only with expression
     // 2. query with other conditions
     // You can costumize your situation
     // and don't forget to change the interface too!
-    bool checkId(std::string& path);
-    void readfile(std::string& path, Mail* mail); // return id
+
     void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
+    void parseExpr(std::string& expr);
 
     // This heap is for the longest() function
     std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
