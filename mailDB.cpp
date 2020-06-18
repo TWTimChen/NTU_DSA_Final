@@ -96,60 +96,55 @@ MailDB::readfile(string& path, Mail* mail)
         << "Invalid path: "
         << path
         << endl;
-
+        
         delete mail;
         return;
     }
 
-    // 1. set [from]
-    getline(inputFile, inputLine);
-    split(inputLine, lineSplit);
-    
-    mail->from = lineSplit[1];
-
-    // 2. set [date]
-    getline(inputFile, inputLine);
-    split(inputLine, lineSplit);
-    
+    unsigned lineCount=0;
     string date;
-    date = lineSplit[3];                        // year
-    date += getMonthIndex(lineSplit[2]);        // month (in util.h)
-    date += lineSplit[1];                       // day
-    lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
-    date += lineSplit[5];                       // hour minite
-    
-    mail->date = date ;
 
-    // 3. set [id]
-    getline(inputFile, inputLine);
-    split(inputLine, lineSplit);
-    
-    mail->id = stoi(lineSplit[1]);
-
-    // 4. set [subject]
-    getline(inputFile, inputLine);
-    split(inputLine, lineSplit);
-    
-    mail->subject = lineSplit[1];
-
-    // 5. set [to]
-    getline(inputFile, inputLine);
-    split(inputLine, lineSplit);
-    
-    mail->to = lineSplit[1];
-
-    // 6. set [content]
-    getline(inputFile, inputLine); // skip first line
     while (getline(inputFile, inputLine)) {
-        // string to lower case
-        if (inputLine.size()==0) break;
-        transform(
-            inputLine.begin(), 
-            inputLine.end(), 
-            inputLine.begin(), 
-            ::tolower
-        );
-        mail->content.push_back(inputLine);
+        switch (lineCount) {
+            case FROM:
+                split(inputLine, lineSplit);
+                mail->from = lineSplit[1];
+                break;
+            case DATE:
+                split(inputLine, lineSplit);
+                date = lineSplit[3];                        // year
+                date += getMonthIndex(lineSplit[2]);        // month (in util.h)
+                date += lineSplit[1];                       // day
+                lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
+                date += lineSplit[5];                       // hour minite
+                mail->date = date ;
+                break;
+            case ID:
+                split(inputLine, lineSplit);
+                mail->id = stoi(lineSplit[1]);
+                break;
+            case SUBJECT:
+                split(inputLine, lineSplit);
+                mail->subject = lineSplit[1];
+                break;
+            case TO:
+                split(inputLine, lineSplit);
+                mail->to = lineSplit[1];
+                break;
+            case CONTENT:
+                break;
+            default:
+                if (inputLine.size()==0) break;
+                transform(
+                    inputLine.begin(), 
+                    inputLine.end(), 
+                    inputLine.begin(), 
+                    ::tolower
+                );
+                mail->content.push_back(inputLine);
+                break;
+        }
+        lineCount++;
     }
 }
 

@@ -39,6 +39,16 @@ private:
 /////////////////////        Class MailDB headers       /////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
+enum READ_ORDER
+{
+    FROM = 0,
+    DATE = 1,
+    ID = 2,
+    SUBJECT = 3,
+    TO = 4,
+    CONTENT = 5
+};
+
 enum PRECEDENCE
 {
     R_PAREN = 0,
@@ -57,20 +67,9 @@ struct OPERATOR
     std::string obj;
     PRECEDENCE prec;
 
-    bool operator<(const OPERATOR& other) const
-    {
-        return prec<other.prec;
-    }
-
-    bool operator<=(const OPERATOR& other) const
-    {
-        return prec<=other.prec;
-    }
-
-    bool operator>(const OPERATOR& other) const
-    {
-        return prec>other.prec;
-    }
+    bool operator<(const OPERATOR& other) const { return prec<other.prec; }
+    bool operator<=(const OPERATOR& other) const { return prec<=other.prec; }
+    bool operator>(const OPERATOR& other) const { return prec>other.prec; }
 };
 
 typedef std::pair<int, unsigned> LENGTH;
