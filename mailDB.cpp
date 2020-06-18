@@ -18,8 +18,7 @@ void
 Mail::print()
 {
     cout
-    << "--------------------------------"
-    << endl
+    << "--------------------------------\n"
     << "Id: " << id << endl
     << "Subject: " << subject << endl
     << "From: " << from << endl
@@ -31,7 +30,7 @@ Mail::print()
         cout << content[i] << endl;
 
     cout 
-    << "--------------------------------"
+    << "--------------------------------\n"
     << endl;
 }
 
@@ -107,14 +106,13 @@ MailDB::readfile(string& path, Mail* mail)
     mail->from = lineSplit[1];
 
     // 2. set [date]
-    // vector<string> -> tm -> t_time
     getline(inputFile, inputLine);
     split(inputLine, lineSplit);
     
     string date;
-    date = lineSplit[1];                        // year
-    //date += getMonthIndex(lineSplit[2]);        // month (in util.h)
-    date += lineSplit[3];                       // day
+    date = lineSplit[3];                       // year
+    date += getMonthIndex(lineSplit[2]);        // month (in util.h)
+    date += lineSplit[1];                        // day
     lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
     date += lineSplit[5];                       // hour minite
     
