@@ -10,7 +10,9 @@
 #include <queue>
 #include <sstream>
 
-typedef std::pair<int, unsigned> LENGTH; 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////          Class Mail headers       /////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 class Mail
 {
@@ -33,6 +35,46 @@ private:
     std::vector<std::string> content;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////        Class MailDB headers       /////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+enum PRECEDENCE
+{
+    R_PAREN = 0,
+    L_PAREN = 1,
+    NOT = 2,
+    AND = 3,
+    OR = 4,
+    STRING = 5,
+    DUMMY = INT32_MAX
+};
+
+struct OPERATOR
+{
+    OPERATOR() {};
+    OPERATOR(std::string s, PRECEDENCE p): obj(s), prec(p) {};
+    std::string obj;
+    PRECEDENCE prec;
+
+    bool operator<(const OPERATOR& other) const
+    {
+        return prec<other.prec;
+    }
+
+    bool operator<=(const OPERATOR& other) const
+    {
+        return prec<=other.prec;
+    }
+
+    bool operator>(const OPERATOR& other) const
+    {
+        return prec>other.prec;
+    }
+};
+
+typedef std::pair<int, unsigned> LENGTH;
+
 class MailDB
 {
 public:
@@ -54,9 +96,14 @@ public:
 private:
     // We may need more member data or function hear
 
-    // [add]
+    // [add] 
     bool checkId(std::string& path);
     void readfile(std::string& path, Mail* mail);
+    // This set stores added path
+    std::unordered_set<std::string> fileAdded;
+
+    // [longest]
+    std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
 
     // [query]
     // 1. query only with expression
@@ -66,13 +113,8 @@ private:
 
     void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
-    void parseExpr(std::string& expr);
-
-    // This heap is for the longest() function
-    std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
-
-    // This set stores added path
-    std::unordered_set<std::string> fileAdded;
+    void parseExpr(std::string& expr, std::vector<OPERATOR>& preorder);
+    void pre2post(std::vector<OPERATOR>& preorder, std::vector<OPERATOR>& postorder);
     
     // TO-Do:
     // A container store mails

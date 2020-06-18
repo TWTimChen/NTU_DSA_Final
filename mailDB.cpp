@@ -156,8 +156,25 @@ MailDB::readfile(string& path, Mail* mail)
 void 
 MailDB::queryOnlyExpr(string& expr)
 {
-    cout << "Execute Query :" << expr << endl;
+    vector<OPERATOR> preorder;
+    vector<OPERATOR> postorder;
 
+    parseExpr(expr, preorder);
+    #ifdef DEBUG
+    cerr << "Preorder expression: ";
+    for (unsigned i=0; i<preorder.size(); i++)
+        cerr << preorder[i].obj << " ";
+    cerr << endl;
+    #endif
+
+    pre2post(preorder, postorder);
+
+    #ifdef DEBUG
+    cerr << "Postorder expression: ";
+    for (unsigned i=0; i<postorder.size(); i++)
+        cerr << postorder[i].obj << " ";
+    cerr << endl;
+    #endif
 }
 
 void 
@@ -167,4 +184,74 @@ MailDB::queryWithCond(vector<string>& args)
     for (int i=0; i<args.size(); i++)
         cout << args[i] << " ";
     cout << endl;
+}
+
+void
+MailDB::parseExpr(string& expr, vector<OPERATOR>& preorder)
+{
+    unsigned pos=0, pin;
+    while (pos<expr.size()) {
+        pin = pos;
+        while (isalnum(expr[pos]))
+            pos++;
+        if(pos-pin)
+            preorder.push_back(OPERATOR(expr.substr(pin, pos-pin), STRING));
+        
+        if (pos==expr.size())
+            break;
+        
+        if (expr[pos]=='(')
+            preorder.push_back(OPERATOR("(", L_PAREN));
+        else if (expr[pos]==')')
+            preorder.push_back(OPERATOR(")", R_PAREN));
+        else if (expr[pos]=='!')
+            preorder.push_back(OPERATOR("!", NOT));
+        else if (expr[pos]=='&')
+            preorder.push_back(OPERATOR("&", AND));
+        else if (expr[pos]=='|')
+            preorder.push_back(OPERATOR("|", OR));
+        else {
+            cerr 
+            << "Unrocognized operator: "
+            << expr[pos]
+            << endl;
+        }
+        pos++;
+    }
+}
+
+void
+MailDB::pre2post(vector<OPERATOR>& preorder, vector<OPERATOR>& postorder)
+{
+    stack<OPERATOR> bufStack;
+    bufStack.push(OPERATOR("", DUMMY));
+
+    for (unsigned i=0; i<preorder.size(); i++) {
+        switch (preorder[i].prec) {
+            case L_PAREN:
+                bufStack.push(preorder[i]);
+                break;
+            case R_PAREN:
+                while (bufStack.top().prec != L_PAREN) {
+                    postorder.push_back(bufStack.top());
+                    bufStack.pop();
+                }
+                bufStack.pop();
+                break;
+            case STRING:
+                bufStack.push(preorder[i]);
+                break;
+            default:
+                while (bufStack.top() <= preorder[i]) {
+                    postorder.push_back(bufStack.top());
+                    bufStack.pop();
+                }
+                bufStack.push(preorder[i]);
+                break;
+        }
+    }
+    while (bufStack.top().prec != DUMMY) {
+        postorder.push_back(bufStack.top());
+        bufStack.pop();
+    }
 }
