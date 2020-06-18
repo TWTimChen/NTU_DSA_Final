@@ -1,19 +1,26 @@
+#ifndef MAIL_DB_H
+#define MAIL_DB_H
+
 #include <iostream>
-#include <unordered_set>
-#include <set>
-#include <string>
-#include <map>
-#include <vector>
 #include <algorithm>
+#include <string>
+#include <vector>
 #include <stack>
+#include <unordered_set>
 #include <queue>
+#include <sstream>
 
 typedef std::pair<int, unsigned> LENGTH; 
 
 class Mail
 {
 public: 
+    Mail() {};
+    Mail(unsigned& ID): id(ID) {};
+    ~Mail() {};
+
     bool searchContent(std::string& keyword);
+    void print();
 
     // Enable MailDB access private data
     friend class MailDB;
@@ -22,8 +29,8 @@ private:
     std::string subject;
     std::string from;
     std::string to;
-    // TO-Do:
-    // A container for content
+    std::string date;
+    std::vector<std::string> content;
 };
 
 class MailDB
@@ -52,13 +59,21 @@ private:
     // 2. query with other conditions
     // You can costumize your situation
     // and don't forget to change the interface too!
+    bool checkId(std::string& path);
+    void readfile(std::string& path, Mail* mail); // return id
     void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
 
     // This heap is for the longest() function
     std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
+
+    // This set stores added path
+    std::unordered_set<std::string> fileAdded;
     
     // TO-Do:
     // A container store mails
     // and maybe other containers to store content
+
 };
+
+#endif

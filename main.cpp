@@ -1,20 +1,10 @@
 #include <iostream>
-#include <sstream>
 #include <stack>
 #include <cassert>
-#include "./mailDB.h"
+#include "mailDB.h"
+#include "util.h"
 
 using namespace std;
-
-void split(const string& str, vector<string>& cont, char delim = ' ')
-{
-    stringstream ss(str);
-    string token;
-    cont.clear();
-    while (getline(ss, token, delim)) {
-        cont.push_back(token);
-    }
-}
 
 int main() 
 {
