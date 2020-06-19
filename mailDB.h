@@ -32,7 +32,7 @@ private:
     std::string from;
     std::string to;
     std::string date;
-    std::vector<std::string> content;
+    std::string content;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,6 +74,13 @@ struct OPERATOR
 
 typedef std::pair<int, unsigned> LENGTH;
 
+enum MODE
+{
+    DEFAULT,
+    LESS,
+    MORE
+};
+
 class MailDB
 {
 public:
@@ -85,13 +92,7 @@ public:
     void add(std::string& path);
     void remove(unsigned id);
     void longest();
-    void query(std::vector<std::string>& args) 
-    {
-        if (args.size()>1) 
-            queryWithCond(args);
-        else if (args.size()==1)
-            queryOnlyExpr(args[0]);
-    }
+    void query(std::vector<std::string>& args, MODE mode);
 private:
     // We may need more member data or function hear
 
@@ -109,7 +110,7 @@ private:
     // 2. query with other conditions
     // You can costumize your situation
     // and don't forget to change the interface too!
-
+    
     void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
     void parseExpr(std::string& expr, std::vector<OPERATOR>& preorder);

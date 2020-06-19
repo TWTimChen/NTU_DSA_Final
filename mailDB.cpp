@@ -24,10 +24,7 @@ Mail::print()
     << "From: " << from << endl
     << "To: " << to << endl
     << "Date: " << date << endl
-    << "Content: " << endl;
-
-    for (int i=0; i<content.size(); i++)
-        cout << content[i] << endl;
+    << "Content: \n" << content << endl;
 
     cout 
     << "--------------------------------\n"
@@ -75,6 +72,33 @@ void
 MailDB::longest()
 {
     cout << "Execate Remove :" << endl;
+}
+
+void
+MailDB::query(vector<string>& args, MODE mode)
+{
+    vector<string> argsAug(4);
+    switch (mode) {
+        case LESS:
+            for (unsigned i=0; i<args.size()-1; i++)
+                args[i] = args[i].substr(1);
+            queryWithCond(args);
+            break;
+        case MORE:
+            for (unsigned i=0; i<args.size()-1; i++){
+                if (args[i][1] == 'f')
+                    argsAug[0] = args[i].substr(2);
+                else if (args[i][1] == 't')
+                    argsAug[1] = args[i].substr(2);
+                else if (args[i][1] == 'd')
+                    argsAug[2] = args[i].substr(2);
+            }
+            argsAug[3] = args[args.size()-1];
+            queryWithCond(argsAug);
+            break;
+        default:
+            break;
+    }
 }
 
 bool
@@ -132,16 +156,11 @@ MailDB::readfile(string& path, Mail* mail)
                 mail->to = lineSplit[1];
                 break;
             case CONTENT:
+                mail->content = "";
                 break;
             default:
                 if (inputLine.size()==0) break;
-                transform(
-                    inputLine.begin(), 
-                    inputLine.end(), 
-                    inputLine.begin(), 
-                    ::tolower
-                );
-                mail->content.push_back(inputLine);
+                mail->content += inputLine;
                 break;
         }
         lineCount++;
@@ -170,15 +189,26 @@ MailDB::queryOnlyExpr(string& expr)
         cerr << postorder[i].obj << " ";
     cerr << endl;
     #endif
+
+    // TO-DOs
 }
 
 void 
 MailDB::queryWithCond(vector<string>& args)
 {
-    cout << "Execute Query :";
+
+    #ifdef DEBUG
+    cout << "Input Query :" << endl;
     for (int i=0; i<args.size(); i++)
-        cout << args[i] << " ";
+        cout << i+1 << ". " << args[i] << endl;
     cout << endl;
+    #endif
+    // TO-DOs
+
+    string expr = args[args.size()-1];
+    queryOnlyExpr(expr);
+
+    // TO-DOs
 }
 
 void

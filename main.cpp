@@ -28,7 +28,10 @@ int main()
         }
         else if (lineSplit[0]=="query") {
             vector<string> args(lineSplit.begin()+1, lineSplit.end());
-            mailDB.query(args);
+            // mode = DEFAULT -> do nothing
+            // mode = LESS -> 賴昭蓉's
+            // mode = MORE -> 李季澄's
+            mailDB.query(args, MORE);
         }
         inputLine.clear();
     }
