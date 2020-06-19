@@ -8,7 +8,7 @@ using namespace std;
 /////////////////////    Class Mail member functions    /////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-bool 
+bool
 Mail::searchContent(string& keyword)
 {
     return false;
@@ -29,7 +29,7 @@ Mail::print()
     for (int i=0; i<content.size(); i++)
         cout << content[i] << endl;
 
-    cout 
+    cout
     << "--------------------------------\n"
     << endl;
 }
@@ -38,12 +38,13 @@ Mail::print()
 /////////////////////   Class MailDB member functions   /////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-void 
+void
 MailDB::add(string& path)
 {
     // if the path is readed, ignore this path
     if (checkId(path)) {
         cout << "-" << endl;
+
     }
     else {
         fileAdded.insert(path);
@@ -55,7 +56,7 @@ MailDB::add(string& path)
 
         // check mail information
         #ifdef DEBUG
-        mail->print(); 
+        mail->print();
         #endif
 
         // TO-Do:
@@ -63,7 +64,7 @@ MailDB::add(string& path)
     }
 }
 
-void 
+void
 MailDB::remove(unsigned id)
 {
     // Note:
@@ -71,7 +72,7 @@ MailDB::remove(unsigned id)
     cout << "Execute Remove :" << id << endl;
 }
 
-void 
+void
 MailDB::longest()
 {
     cout << "Execate Remove :" << endl;
@@ -90,13 +91,13 @@ MailDB::readfile(string& path, Mail* mail)
     string inputLine;
     vector<string> lineSplit;
     inputFile.open(path);
-    
+
     if (inputFile.fail()) {
-        cout 
+        cout
         << "Invalid path: "
         << path
         << endl;
-        
+
         delete mail;
         return;
     }
@@ -136,9 +137,9 @@ MailDB::readfile(string& path, Mail* mail)
             default:
                 if (inputLine.size()==0) break;
                 transform(
-                    inputLine.begin(), 
-                    inputLine.end(), 
-                    inputLine.begin(), 
+                    inputLine.begin(),
+                    inputLine.end(),
+                    inputLine.begin(),
                     ::tolower
                 );
                 mail->content.push_back(inputLine);
@@ -148,7 +149,7 @@ MailDB::readfile(string& path, Mail* mail)
     }
 }
 
-void 
+void
 MailDB::queryOnlyExpr(string& expr)
 {
     vector<OPERATOR> preorder;
@@ -172,7 +173,7 @@ MailDB::queryOnlyExpr(string& expr)
     #endif
 }
 
-void 
+void
 MailDB::queryWithCond(vector<string>& args)
 {
     cout << "Execute Query :";
@@ -191,10 +192,10 @@ MailDB::parseExpr(string& expr, vector<OPERATOR>& preorder)
             pos++;
         if(pos-pin)
             preorder.push_back(OPERATOR(expr.substr(pin, pos-pin), STRING));
-        
+
         if (pos==expr.size())
             break;
-        
+
         if (expr[pos]=='(')
             preorder.push_back(OPERATOR("(", L_PAREN));
         else if (expr[pos]==')')
@@ -206,7 +207,7 @@ MailDB::parseExpr(string& expr, vector<OPERATOR>& preorder)
         else if (expr[pos]=='|')
             preorder.push_back(OPERATOR("|", OR));
         else {
-            cerr 
+            cerr
             << "Unrocognized operator: "
             << expr[pos]
             << endl;
