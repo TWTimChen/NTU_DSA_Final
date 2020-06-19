@@ -236,6 +236,9 @@ MailDB::pre2post(vector<OPERATOR>& preorder, vector<OPERATOR>& postorder)
             case STRING:
                 bufStack.push(preorder[i]);
                 break;
+            case NOT:
+                bufStack.push(preorder[i]);
+                break;
             default:
                 while (bufStack.top() <= preorder[i]) {
                     postorder.push_back(bufStack.top());

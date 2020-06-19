@@ -51,12 +51,12 @@ enum READ_ORDER
 
 enum PRECEDENCE
 {
-    R_PAREN = 0,
-    L_PAREN = 1,
-    NOT = 2,
-    AND = 3,
-    OR = 4,
-    STRING = 5,
+    STRING = 0,
+    NOT = 1,
+    AND = 2,
+    OR = 3,
+    R_PAREN = INT32_MAX-2,
+    L_PAREN = INT32_MAX-1,
     DUMMY = INT32_MAX
 };
 
