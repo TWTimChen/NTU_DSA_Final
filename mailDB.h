@@ -20,8 +20,8 @@
 class Mail
 {
 public:
-    Mail() {};
-    Mail(int& ID): id(ID) {};
+    Mail() { l=0; };
+    Mail(int& ID): id(ID) { l=0; };
     ~Mail() {};
 
     void print();
@@ -98,7 +98,6 @@ public:
     void longest();
     void query(std::vector<std::string>& args, MODE mode);
 
-    //friend class Mail;
 private:
     // We may need more member data or function hear
 
@@ -118,14 +117,17 @@ private:
     void queryWithCond(std::vector<std::string>& args);
     void parseExpr(std::string& expr, std::vector<OPERATOR>& preorder);
     void pre2post(std::vector<OPERATOR>& preorder, std::vector<OPERATOR>& postorder);
+
+    // function for query with conditions
     std::set<int> candidate;
     void print_candidate();
-
     std::set<int> find_by_date(const std::string& date_l,const std::string& date_u);
     std::set<int> find_by_from(const std::string& from);
     std::set<int> find_by_to(const std::string& to);
     std::vector<std::string> getdate(std::string & str);
     std::string getstring(std::string & str);
+
+    // function for expression
     void operator_not (std::string & keyword);
     void operator_with (std::string & keyword);
     void operator_or (std::string & keyword1, std::string & keyword2);

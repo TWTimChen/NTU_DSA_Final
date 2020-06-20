@@ -22,10 +22,12 @@ Mail::print()
     << "Content: \n" << content << endl
     << "Content_set: \n";
 
+
     unordered_set<string> ::iterator it = content_set.begin();
     for(it; it!=content_set.end(); it++)
         cout<<*it<<' ';
     cout<<'\n';
+    cout << "Length:" << l << endl;
 
     cout
     << "--------------------------------\n"
@@ -52,34 +54,43 @@ MailDB::add(string& path)
         fileAdded.insert(path);
 
         Mail* mail = new Mail;
+
         readfile(path, mail);
-        cout << mail->id << endl;
-        cout << endl;
+        cout << mail->id << '\n';
+
 
         // check mail information
-
-        mail->print();
+        #ifdef DEBUG
+            mail->print();
+        #endif
         // TO-Do:
         // Insert the new mail in to the container
+        mail = NULL;
     }
 }
 
 void
 MailDB::remove(int id)
 {
-    cout << "Execute Remove :" << id << endl;
+    //cout << "Execute Remove :" << id << endl;
     string from = mail_id[id].from;
     string to = mail_id[id].to;
     string date = mail_id[id].date;
     int l = mail_id[id].l;
 
 //not sure if this work:
-    Mail* mail = &mail_id[id];
+    //Mail* mail = &(mail_id[id]);
     mail_id.erase(id);
-    (*mail).~Mail();
+    //delete mail;
 
     mail_from[from].erase(id);
+    if(mail_from[from].size() == 0)
+        mail_from.erase(from);
+
     mail_to[to].erase(id);
+    if(mail_to[to].size() == 0)
+        mail_to.erase(to);
+
 
     multimap<string,int>::iterator itlow = mail_date.lower_bound(date);
     multimap<string,int>::iterator itup = mail_date.upper_bound(date);
@@ -98,13 +109,15 @@ MailDB::remove(int id)
             break;
         }
     }
+
+    cout << mail_id.size() <<'\n';
     // Remember to delete the mail pointer
 }
 
 void
 MailDB::longest()
 {
-    cout << "Execute Longest :" << endl;
+    //cout << "Execute Longest :" << endl;
 
     if (length.size() == 0)
     cout<<"-"<<'\n';
@@ -116,7 +129,7 @@ MailDB::longest()
             if(it->second < smallest_id)
                 smallest_id = it->second;
         }
-        cout<< smallest_id <<'\n';
+        cout<< smallest_id << " " <<largest_length <<'\n';
     }
 }
 
@@ -215,7 +228,7 @@ MailDB::readfile(string& path, Mail* mail)
         }
         lineCount++;
     }
-    mail_id[id] = *mail;
+
     unordered_map<string, set<int> >::iterator it = mail_from.find(from);
     if(it == mail_from.end()){
         set<int> s;
@@ -239,9 +252,10 @@ MailDB::readfile(string& path, Mail* mail)
     char* p = &(mail->content)[0];
     //cout<<p;
     string s;
+    int tmp = 0;
     while(*p!='\0'){
         if(isalpha(*p)){
-            (mail->l)++;
+            tmp++;
             if(isupper(*p))
                 s+= tolower(*p);
             else
@@ -256,8 +270,10 @@ MailDB::readfile(string& path, Mail* mail)
         p++;
     }
     mail->content_set.emplace(s);
-    int tmp = mail->l;
+    mail->l=tmp;
     length.insert( pair<int,int>( tmp ,id) );
+
+    mail_id[id] = *mail;
 }
 
 void
@@ -338,27 +354,40 @@ MailDB::queryWithCond(vector<string>& args)
     candidate.clear();
     if(args.size() !=1){
         for (int i=0; i<args.size()-1; i++){
-            if(args[i][1] == 'f'){
+            if(args[i][0] == 'f'){
                 string from = getstring(args[i]);
                 set<int> f = find_by_from(from);
-                set<int> tmp;
-                set_intersection(f.begin(), f.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
-                candidate = tmp; //之後改成in-place intersection應該可以快一些..
+                if(candidate.size() == 0)
+                    candidate = f;
+                else{
+                    set<int> tmp;
+                    set_intersection(f.begin(), f.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
+                    candidate = tmp; //之後改成in-place intersection應該可以快一些..
+                }
+
 
             }
-            else if(args[i][1] == 't'){
+            else if(args[i][0] == 't'){
                 string to = getstring(args[i]);
                 set<int> t = find_by_to(to);
-                set<int> tmp;
-                set_intersection(t.begin(), t.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
-                candidate = tmp; //之後改成in-place intersection應該可以快一些..
+                if(candidate.size() == 0)
+                    candidate = t;
+                else{
+                    set<int> tmp;
+                    set_intersection(t.begin(), t.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
+                    candidate = tmp; //之後改成in-place intersection應該可以快一些..
+                }
             }
-            else if(args[i][1] == 'd'){
+            else if(args[i][0] == 'd'){
                 vector<string> date = getdate(args[i]);
                 set<int> d = find_by_date(date[0],date[1]);
-                set<int> tmp;
-                set_intersection(d.begin(), d.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
-                candidate = tmp;
+                if(candidate.size() == 0)
+                    candidate = d;
+                else{
+                    set<int> tmp;
+                    set_intersection(d.begin(), d.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
+                    candidate = tmp;
+                }
             }
         }
     }
@@ -526,7 +555,6 @@ void
 MailDB:: operator_with (string & keyword){
     set<int>::iterator it = candidate.begin();
     while(it != candidate.end()){
-        cout<<(mail_id[*it].find(keyword))<<endl;
         if( !(mail_id[*it].find(keyword)) ){
             it = candidate.erase(it);
         }
@@ -565,33 +593,7 @@ MailDB::print_candidate(){
     for(it; it!=candidate.end(); it++){
         cout<<*it<<' ';
     }
-    cout<<endl;
+    cout<<'\n';
 }
 
-int main()
-{
-    string inputLine;
-    vector<string> lineSplit;
 
-    MailDB mailDB;
-
-    while(getline(cin, inputLine)){
-        if(inputLine.size()==0) break;
-        split(inputLine, lineSplit);
-        if (lineSplit[0]=="add") {
-            mailDB.add(lineSplit[1]);
-        }
-        else if (lineSplit[0]=="remove") {
-            unsigned id = stoi(lineSplit[1]);
-            mailDB.remove(id);
-        }
-        else if (lineSplit[0]=="longest") {
-            mailDB.longest();
-        }
-        else if (lineSplit[0]=="query") {
-            vector<string> args(lineSplit.begin()+1, lineSplit.end());
-            mailDB.query(args, LESS);
-        }
-        inputLine.clear();
-    }
-}
