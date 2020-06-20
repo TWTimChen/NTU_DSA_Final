@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int main() 
+int main()
 {
     string inputLine;
     vector<string> lineSplit;
@@ -18,7 +18,7 @@ int main()
         split(inputLine, lineSplit);
         if (lineSplit[0]=="add") {
             mailDB.add(lineSplit[1]);
-        } 
+        }
         else if (lineSplit[0]=="remove") {
             unsigned id = stoi(lineSplit[1]);
             mailDB.remove(id);
@@ -28,7 +28,7 @@ int main()
         }
         else if (lineSplit[0]=="query") {
             vector<string> args(lineSplit.begin()+1, lineSplit.end());
-            mailDB.query(args);
+            mailDB.query(args, LESS);
         }
         inputLine.clear();
     }

@@ -7,6 +7,9 @@
 #include <vector>
 #include <stack>
 #include <unordered_set>
+#include <set>
+#include <unordered_map>
+#include <map>
 #include <queue>
 #include <sstream>
 
@@ -16,23 +19,25 @@
 
 class Mail
 {
-public: 
+public:
     Mail() {};
-    Mail(unsigned& ID): id(ID) {};
+    Mail(int& ID): id(ID) {};
     ~Mail() {};
 
-    bool searchContent(std::string& keyword);
     void print();
+    bool find(const std::string& keyword);
 
     // Enable MailDB access private data
     friend class MailDB;
 private:
-    unsigned id;
+    int id;
+    int l;
     std::string subject;
     std::string from;
     std::string to;
     std::string date;
-    std::vector<std::string> content;
+    std::string content;
+    std::unordered_set<std::string> content_set;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -51,12 +56,12 @@ enum READ_ORDER
 
 enum PRECEDENCE
 {
-    R_PAREN = 0,
-    L_PAREN = 1,
-    NOT = 2,
-    AND = 3,
-    OR = 4,
-    STRING = 5,
+    STRING = 0,
+    NOT = 1,
+    AND = 2,
+    OR = 3,
+    R_PAREN = INT32_MAX-2,
+    L_PAREN = INT32_MAX-1,
     DUMMY = INT32_MAX
 };
 
@@ -72,7 +77,13 @@ struct OPERATOR
     bool operator>(const OPERATOR& other) const { return prec>other.prec; }
 };
 
-typedef std::pair<int, unsigned> LENGTH;
+
+enum MODE
+{
+    DEFAULT,
+    LESS,
+    MORE
+};
 
 class MailDB
 {
@@ -83,41 +94,48 @@ public:
     // Thers four member funtions is the interface of this class
     // which is designed for the four commands respectively
     void add(std::string& path);
-    void remove(unsigned id);
+    void remove(int id);
     void longest();
-    void query(std::vector<std::string>& args) 
-    {
-        if (args.size()>1) 
-            queryWithCond(args);
-        else if (args.size()==1)
-            queryOnlyExpr(args[0]);
-    }
+    void query(std::vector<std::string>& args, MODE mode);
+
+    //friend class Mail;
 private:
     // We may need more member data or function hear
 
-    // [add] 
+    // [add]
     bool checkId(std::string& path);
     void readfile(std::string& path, Mail* mail);
     // This set stores added path
     std::unordered_set<std::string> fileAdded;
 
     // [longest]
-    std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
+    std::multimap<int,int,std::greater<int> > length;
 
     // [query]
     // 1. query only with expression
     // 2. query with other conditions
-    // You can costumize your situation
-    // and don't forget to change the interface too!
-
     void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
     void parseExpr(std::string& expr, std::vector<OPERATOR>& preorder);
     void pre2post(std::vector<OPERATOR>& preorder, std::vector<OPERATOR>& postorder);
-    
-    // TO-Do:
-    // A container store mails
-    // and maybe other containers to store content
+    std::set<int> candidate;
+    void print_candidate();
+
+    std::set<int> find_by_date(const std::string& date_l,const std::string& date_u);
+    std::set<int> find_by_from(const std::string& from);
+    std::set<int> find_by_to(const std::string& to);
+    std::vector<std::string> getdate(std::string & str);
+    std::string getstring(std::string & str);
+    void operator_not (std::string & keyword);
+    void operator_with (std::string & keyword);
+    void operator_or (std::string & keyword1, std::string & keyword2);
+    void operator_and (std::string & keyword1, std::string & keyword2);
+
+    // information of mail
+    std::map<int, Mail > mail_id;
+    std::unordered_map<std::string, std::set<int> > mail_from;
+    std::unordered_map<std::string, std::set<int> > mail_to;
+    std::multimap<std::string, int > mail_date;
 
 };
 
