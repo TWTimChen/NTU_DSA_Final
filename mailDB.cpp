@@ -276,18 +276,6 @@ MailDB::readfile(string& path, Mail* mail)
     mail_id[id] = *mail;
 }
 
-void
-MailDB:: operator_not (string & keyword){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( mail_id[*it].find(keyword) ){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
 set<int>
 MailDB:: operator_not (string & keyword){
     set<int> subset = candidate;
@@ -302,50 +290,83 @@ MailDB:: operator_not (string & keyword){
 }
 void
 MailDB:: operator_not (set<int> & sset){
+    set<int> tmp;
+    set_difference(candidate.begin(), candidate.end(), sset.begin(), sset.end(), inserter(tmp, tmp.begin()) );
+    sset = tmp;
+}
+
+set<int>
+MailDB:: operator_with (string & keyword){
+    set<int> subset = candidate;
     set<int>::iterator it = subset.begin();
     while(it != subset.end()){
-        if( mail_id[*it].find(keyword) )
+        if( !mail_id[*it].find(keyword) )
             it = subset.erase(it);
         else
             it++;
     }
+    return subset;
 }
-void
-MailDB:: operator_with (string & keyword){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !(mail_id[*it].find(keyword)) ){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
-void
+
+set<int>
 MailDB:: operator_or (string & keyword1, string & keyword2){
+    set<int> subset = candidate;
+    set<int>::iterator it = subset.begin();
+    while(it != subset.end()){
+        if( !( mail_id[*it].find(keyword1) || mail_id[*it].find(keyword2) ))
+            it = subset.erase(it);
+        else
+            ++it;
+    }
+    return subset;
+}
+
+void
+MailDB:: operator_or (string & keyword, set<int> & sset){
     set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !(mail_id[*it].find(keyword1) || mail_id[*it].find(keyword2) )){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
+    while(it!= candidate.end()){
+        if( (mail_id[*it].find(keyword)) )
+            sset.emplace(*it);
+        else
+            ++it;
     }
 }
+
 void
+MailDB:: operator_or (set<int> & sset1, set<int> & sset2){
+    set<int> tmp;
+    set_union(sset1.begin(),sset1.end(),sset2.begin(),sset2.end(),inserter(tmp,tmp.begin()));
+    sset2 = tmp;
+}
+set<int>
 MailDB:: operator_and (string & keyword1, string & keyword2){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !( mail_id[*it].find(keyword1) && mail_id[*it].find(keyword2) )){
-            it = candidate.erase(it);
-            //candidate.erase(it++);
-        }
-        else{
+    set<int> subset = candidate;
+    set<int>::iterator it = subset.begin();
+    while(it != subset.end()){
+        if( !( mail_id[*it].find(keyword1) && mail_id[*it].find(keyword2) ))
+            it = subset.erase(it);
+        else
             ++it;
-        }
     }
+    return subset;
+}
+
+void
+MailDB:: operator_and (string & keyword, set<int> & sset){
+    set<int>::iterator it = sset.begin();
+    while(it!= sset.end()){
+        if( !(mail_id[*it].find(keyword)) )
+            it = sset.erase(it);
+        else
+            ++it;
+    }
+}
+
+void
+MailDB:: operator_and (set<int> & sset1, set<int> & sset2){
+    set<int> tmp;
+    set_intersection(sset1.begin(),sset1.end(),sset2.begin(),sset2.end(),inserter(tmp,tmp.begin()));
+    sset2 = tmp;
 }
 
 void
@@ -384,44 +405,83 @@ MailDB::queryOnlyExpr(string& expr)
 
         else if(postorder[i].prec == NOT){
             if(keywords.top().prec == STRING){
-                subset.push( operator_not(keyword.top()) );
+                subset.push( operator_not(keywords.top().obj ) );
                 keywords.pop();
                 keywords.push(OPERATOR("",DUMMY));
             }
             else if(keywords.top().prec == DUMMY){
                 operator_not( subset.top() );
-                // set<int> tmp_set = operator_not( subset.top() );
-                // subset.pop()
-                // subset.push(tmp_set);
-
-                // keywords.pop();
-                // keywords.push(OPERATOR("",DUMMY));
             }
         }
         else if(postorder[i].prec == OR){
-            string tmp = keywords.top();
+            OPERATOR tmp_top = keywords.top();
             keywords.pop();
-            operator_or(tmp, keywords.top());
-            keywords.pop();
+            // case1 : string,set
+            if ( tmp_top.prec == STRING ){
+                if ( keywords.top().prec == DUMMY )
+                    operator_or( tmp_top.obj, subset.top() );
+            // case2 : string ,string
+                else if (keywords.top().prec == STRING){
+                    subset.push( operator_or( tmp_top.obj, keywords.top().obj ));
+                    keywords.pop();
+                    keywords.push(OPERATOR("",DUMMY));
+                }
+            }
+            else if( tmp_top.prec == DUMMY){
+            // case3 : set ,set
+                if( keywords.top().prec == DUMMY){
+                    set<int> tmp_set = subset.top();
+                    subset.pop();
+                    operator_or(tmp_set, subset.top());
+                }
+            // case4 : set ,string
+                else if( keywords.top().prec == STRING){
+                    operator_or( keywords.top().obj, subset.top() );
+                    keywords.pop();
+                    keywords.push(OPERATOR("",DUMMY));
+                }
+            }
+
         }
         else if(postorder[i].prec == AND){
-            string tmp = keywords.top();
+            OPERATOR tmp_top = keywords.top();
             keywords.pop();
-            operator_and(tmp, keywords.top());
-            keywords.pop();
+            // case1 : string,set
+            if ( tmp_top.prec == STRING ){
+                if ( keywords.top().prec == DUMMY )
+                    operator_and( tmp_top.obj, subset.top() );
+            // case2 : string ,string
+                else if (keywords.top().prec == STRING){
+                    subset.push( operator_and( tmp_top.obj, keywords.top().obj ));
+                    keywords.pop();
+                    keywords.push(OPERATOR("",DUMMY));
+                }
+            }
+            else if( tmp_top.prec == DUMMY){
+            // case3 : set ,set
+                if( keywords.top().prec == DUMMY){
+                    set<int> tmp_set = subset.top();
+                    subset.pop();
+                    operator_and(tmp_set, subset.top());
+                }
+            // case4 : set ,string
+                else if( keywords.top().prec == STRING){
+                    operator_and( keywords.top().obj, subset.top() );
+                    keywords.pop();
+                    keywords.push(OPERATOR("",DUMMY));
+                }
+            }
         }
     }
-    if(keywords.size() != 0)
-        operator_with( keywords.top() );
+    set<int> result;
+    if( keywords.top().prec == STRING )
+        result = operator_with( keywords.top().obj );
+    else
+        result = subset.top();
 
-    if(candidate.size() == 0)
-        cout<<"-";
-    else{
-        set<int> ::iterator it = candidate.begin();
-        for(it; it!=candidate.end(); it++){
-            cout<< *it <<" ";
-        }
-    }
+    set<int>::iterator it= result.begin();
+    for(it; it!=result.end(); ++it)
+        cout<< *it <<" ";
 }
 
 void
@@ -637,30 +697,4 @@ MailDB::print_candidate(){
 }
 
 
-int main()
-{
-    string inputLine;
-    vector<string> lineSplit;
 
-    MailDB mailDB;
-
-    while(getline(cin, inputLine)){
-        if(inputLine.size()==0) break;
-        split(inputLine, lineSplit);
-        if (lineSplit[0]=="add") {
-            mailDB.add(lineSplit[1]);
-        }
-        else if (lineSplit[0]=="remove") {
-            unsigned id = stoi(lineSplit[1]);
-            mailDB.remove(id);
-        }
-        else if (lineSplit[0]=="longest") {
-            mailDB.longest();
-        }
-        else if (lineSplit[0]=="query") {
-            vector<string> args(lineSplit.begin()+1, lineSplit.end());
-            mailDB.query(args, LESS);
-        }
-        inputLine.clear();
-    }
-}

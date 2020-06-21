@@ -13,6 +13,7 @@
 #include <queue>
 #include <sstream>
 
+
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////          Class Mail headers       /////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -129,13 +130,15 @@ private:
 
     // function for expression
     std::set<int> operator_not (std::string & keyword);
-    std::set<int> operator_not (std::set<int> & sset);
+    void operator_not (std::set<int> & sset);
     std::set<int> operator_with (std::string & keyword);
-    std::set<int> operator_with (std::set<int> & sset );
+    void operator_with (std::set<int> & sset );
     std::set<int> operator_or (std::string & keyword1, std::string & keyword2);
-    std::set<int> operator_or (std::set<int> & sset1 ,std::set<int> & sset2);
+    void operator_or (std::string & keyword ,std::set<int> & sset);
+    void operator_or (std::set<int> & sset1 ,std::set<int> & sset2);
     std::set<int> operator_and (std::string & keyword1, std::string & keyword2);
-    std::set<int> operator_and (std::set<int> & sset1 ,std::set<int> & sset2);
+    void operator_and (std::string & keyword ,std::set<int> & sset);
+    void operator_and (std::set<int> & sset1 ,std::set<int> & sset2);
 
     // information of mail
     std::map<int, Mail > mail_id;
