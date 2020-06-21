@@ -75,6 +75,11 @@ MailDB::add(string& path)
 void
 MailDB::remove(int id)
 {
+    if(mail_id.find(id) == mail_id.end()){
+        cout<< "-"<<'\n';
+        return;
+    }
+
     //cout << "Execute Remove :" << id << endl;
     string from = mail_id[id].from;
     string to = mail_id[id].to;
@@ -237,15 +242,11 @@ MailDB::readfile(string& path, Mail* mail)
 
     //content_set initiate
     // change uppercase to lowercase & ignore
-    mail->content+=" ";
-    mail->content+=mail->subject;
-
     char* p = &(mail->content)[0];
-
     string s;
     int tmp = 0;
     while(*p!='\0'){
-        if(isalpha(*p)){
+        if(isalnum(*p)){
             tmp++;
             if(isupper(*p))
                 s+= tolower(*p);
@@ -263,6 +264,26 @@ MailDB::readfile(string& path, Mail* mail)
     mail->content_set.emplace(s);
     mail->l=tmp;
     length.insert( pair<int,int>( tmp ,id) );
+
+//put into subject
+    p = &(mail->subject)[0];
+    s.clear();
+    while(*p!='\0'){
+        if(isalnum(*p)){
+            if(isupper(*p))
+                s+= tolower(*p);
+            else
+                s+= *p;
+        }
+        else if(!(isalnum(*p))){
+            if (s.length()!=0){
+                mail->content_set.emplace(s);
+                s.clear();
+            }
+        }
+        p++;
+    }
+    mail->content_set.emplace(s);
 
     mail_id[id] = *mail;
 }
@@ -658,11 +679,11 @@ MailDB::pre2post(vector<OPERATOR>& preorder, vector<OPERATOR>& postorder)
 vector<string>
 MailDB:: getdate(string & str){
     vector<string> s(2);
-    if(str[2]=='~'){
+    if(str[1]=='~'){
         s[0] = "000000000000";
         s[1] = str.substr(2,12);
     }
-    else if(str.length() == 15){
+    else if(str.length() == 14){
         s[0] = str.substr(1,12);
         s[1] = "999912312359";
     }
@@ -670,6 +691,7 @@ MailDB:: getdate(string & str){
         s[0] = str.substr(1,12);
         s[1] = str.substr(14,12);
     }
+    cout<<"";
     return s;
 }
 
@@ -688,6 +710,5 @@ MailDB::print_candidate(){
     }
     cout<<'\n';
 }
-
 
 
