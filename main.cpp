@@ -28,7 +28,7 @@ int main()
         }
         else if (lineSplit[0]=="query") {
             vector<string> args(lineSplit.begin()+1, lineSplit.end());
-            mailDB.query(args, LESS);
+            mailDB.query(args);
         }
         inputLine.clear();
     }

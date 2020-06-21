@@ -60,7 +60,7 @@ MailDB::add(string& path)
         Mail* mail = new Mail;
 
         readfile(path, mail);
-        cout << mail->id << '\n';
+        cout << mail_id.size() << '\n';
 
         // check mail information
         #ifdef DEBUG
@@ -112,8 +112,10 @@ MailDB::remove(int id)
             break;
         }
     }
-
-    cout << mail_id.size() <<'\n';
+    if(mail_id.size() == 0)
+        cout<<'-'<<'\n';
+    else
+        cout << mail_id.size() <<'\n';
 }
 
 void
@@ -143,9 +145,7 @@ MailDB::query(vector<string>& args)
         args[i] = args[i].substr(1);
     }
     for_each(args[args.size()-1].begin(), args[args.size()-1].end(), toLowerCase);
-
     queryWithCond(args);
-
 }
 
 bool
@@ -470,9 +470,13 @@ MailDB::queryOnlyExpr(string& expr)
     else
         result = subset.top();
 
-    set<int>::iterator it= result.begin();
-    for(it; it!=result.end(); ++it)
-        cout<< *it <<" ";
+    if(result.size() == 0)
+        cout<< "-" ;
+    else{
+        set<int>::iterator it= result.begin();
+        for(it; it!=result.end(); ++it)
+            cout<< *it <<" ";
+    }
 }
 
 void
@@ -500,8 +504,6 @@ MailDB::queryWithCond(vector<string>& args)
                     set_intersection(f.begin(), f.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
                     candidate = tmp; //之後改成in-place intersection應該可以快一些..
                 }
-
-
             }
             else if(args[i][0] == 't'){
                 string to = getstring(args[i]);
