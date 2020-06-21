@@ -78,7 +78,7 @@ MailDB::remove(int id)
     string date = mail_id[id].date;
     int l = mail_id[id].l;
 
-//not sure if this work:
+    //not sure if this work:
     //Mail* mail = &(mail_id[id]);
     mail_id.erase(id);
     //delete mail;
@@ -111,7 +111,6 @@ MailDB::remove(int id)
     }
 
     cout << mail_id.size() <<'\n';
-    // Remember to delete the mail pointer
 }
 
 void
@@ -246,11 +245,12 @@ MailDB::readfile(string& path, Mail* mail)
     mail_date.emplace(date,id);
 
     //content_set initiate
+    // change uppercase to lowercase & ignore
     mail->content+=" ";
     mail->content+=mail->subject;
 
     char* p = &(mail->content)[0];
-    //cout<<p;
+
     string s;
     int tmp = 0;
     while(*p!='\0'){
@@ -277,6 +277,78 @@ MailDB::readfile(string& path, Mail* mail)
 }
 
 void
+MailDB:: operator_not (string & keyword){
+    set<int>::iterator it = candidate.begin();
+    while(it != candidate.end()){
+        if( mail_id[*it].find(keyword) ){
+            it = candidate.erase(it);
+        }
+        else{
+            it++;
+        }
+    }
+}
+set<int>
+MailDB:: operator_not (string & keyword){
+    set<int> subset = candidate;
+    set<int>::iterator it = subset.begin();
+    while(it != subset.end()){
+        if( mail_id[*it].find(keyword) )
+            it = subset.erase(it);
+        else
+            it++;
+    }
+    return subset;
+}
+void
+MailDB:: operator_not (set<int> & sset){
+    set<int>::iterator it = subset.begin();
+    while(it != subset.end()){
+        if( mail_id[*it].find(keyword) )
+            it = subset.erase(it);
+        else
+            it++;
+    }
+}
+void
+MailDB:: operator_with (string & keyword){
+    set<int>::iterator it = candidate.begin();
+    while(it != candidate.end()){
+        if( !(mail_id[*it].find(keyword)) ){
+            it = candidate.erase(it);
+        }
+        else{
+            it++;
+        }
+    }
+}
+void
+MailDB:: operator_or (string & keyword1, string & keyword2){
+    set<int>::iterator it = candidate.begin();
+    while(it != candidate.end()){
+        if( !(mail_id[*it].find(keyword1) || mail_id[*it].find(keyword2) )){
+            it = candidate.erase(it);
+        }
+        else{
+            it++;
+        }
+    }
+}
+void
+MailDB:: operator_and (string & keyword1, string & keyword2){
+    set<int>::iterator it = candidate.begin();
+    while(it != candidate.end()){
+        if( !( mail_id[*it].find(keyword1) && mail_id[*it].find(keyword2) )){
+            it = candidate.erase(it);
+            //candidate.erase(it++);
+        }
+        else{
+            ++it;
+        }
+    }
+}
+
+void
 MailDB::queryOnlyExpr(string& expr)
 {
     vector<OPERATOR> preorder;
@@ -300,18 +372,31 @@ MailDB::queryOnlyExpr(string& expr)
     #endif
 
     // TO-DOs
-    stack<string> keywords;
+    stack<OPERATOR> keywords;
+    stack<set<int> > subset;
     for(int i = 0 ; i < postorder.size(); i++){
         if(postorder[i].prec == STRING ){
             #ifdef DEBUG
             cerr << "String in stack: "<<postorder[i].obj<<endl;
             #endif
-            keywords.push( postorder[i].obj );
+            keywords.push( postorder[i] );
         }
 
         else if(postorder[i].prec == NOT){
-            operator_not(keywords.top());
-            keywords.pop();
+            if(keywords.top().prec == STRING){
+                subset.push( operator_not(keyword.top()) );
+                keywords.pop();
+                keywords.push(OPERATOR("",DUMMY));
+            }
+            else if(keywords.top().prec == DUMMY){
+                operator_not( subset.top() );
+                // set<int> tmp_set = operator_not( subset.top() );
+                // subset.pop()
+                // subset.push(tmp_set);
+
+                // keywords.pop();
+                // keywords.push(OPERATOR("",DUMMY));
+            }
         }
         else if(postorder[i].prec == OR){
             string tmp = keywords.top();
@@ -326,8 +411,8 @@ MailDB::queryOnlyExpr(string& expr)
             keywords.pop();
         }
     }
-
-    operator_with( keywords.top() );
+    if(keywords.size() != 0)
+        operator_with( keywords.top() );
 
     if(candidate.size() == 0)
         cout<<"-";
@@ -399,18 +484,50 @@ MailDB::queryWithCond(vector<string>& args)
         }
     }
     if (candidate.size() == 0){
-        cout<< "no candidate-" <<'\n';
+        cout<< "-" <<'\n';
         return;
     }
 
     string expr = args[args.size()-1];
     queryOnlyExpr(expr);
-    cout << endl;
+    cout << '\n';
     #ifdef DEBUG
     cerr<<"query end"<<endl;
     #endif
 
 }
+
+set<int>
+MailDB:: find_by_date(const string& date_l,const string& date_u){
+    set<int> result;
+    multimap<string,int>::iterator itlow = mail_date.lower_bound(date_l);
+    multimap<string,int>::iterator itup = mail_date.upper_bound(date_u);
+    for(multimap<string,int>::iterator it = itlow; it!=itup ; it++){
+        result.insert(it->second);
+    }
+   return result;
+}
+
+set<int>
+MailDB:: find_by_from(const string& from){
+    unordered_map<string, set<int> >::iterator f = mail_from.find(from); //找mail_from有沒有這位sender
+    if( f == mail_from.end()){
+        set<int> s;
+        return s;
+    }
+    else { return f->second; }
+}
+
+set<int>
+MailDB:: find_by_to(const string& to){
+    unordered_map<string, set<int> >::iterator t = mail_to.find(to); //找mail_to有沒有這位sender
+    if( t == mail_to.end()){
+        set<int> s;
+        return s;
+    }
+    else { return t->second; }
+}
+
 
 void
 MailDB::parseExpr(string& expr, vector<OPERATOR>& preorder)
@@ -484,36 +601,6 @@ MailDB::pre2post(vector<OPERATOR>& preorder, vector<OPERATOR>& postorder)
         bufStack.pop();
     }
 }
-set<int>
-MailDB:: find_by_date(const string& date_l,const string& date_u){
-    set<int> result;
-    multimap<string,int>::iterator itlow = mail_date.lower_bound(date_l);
-    multimap<string,int>::iterator itup = mail_date.upper_bound(date_u);
-    for(multimap<string,int>::iterator it = itlow; it!=itup ; it++){
-        result.insert(it->second);
-    }
-   return result;
-
-}
-set<int>
-MailDB:: find_by_from(const string& from){
-    unordered_map<string, set<int> >::iterator f = mail_from.find(from); //找mail_from有沒有這位sender
-    if( f == mail_from.end()){
-        set<int> s;
-        return s;
-    }
-    else { return f->second;}
-}
-
-set<int>
-MailDB:: find_by_to(const string& to){
-    unordered_map<string, set<int> >::iterator t = mail_to.find(to); //找mail_to有沒有這位sender
-    if( t == mail_to.end()){
-        set<int> s;
-        return s;
-    }
-    else { return t->second;}
-}
 
 vector<string>
 MailDB:: getdate(string & str){
@@ -533,60 +620,13 @@ MailDB:: getdate(string & str){
     return s;
 }
 
+
 string
 MailDB:: getstring(string & str){
     string s=str.substr(2,str.length()-3);
     return s;
 }
 
-void
-MailDB:: operator_not (string & keyword){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( mail_id[*it].find(keyword) ){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
-void
-MailDB:: operator_with (string & keyword){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !(mail_id[*it].find(keyword)) ){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
-void
-MailDB:: operator_or (string & keyword1, string & keyword2){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !(mail_id[*it].find(keyword1) || mail_id[*it].find(keyword2) )){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
-void
-MailDB:: operator_and (string & keyword1, string & keyword2){
-    set<int>::iterator it = candidate.begin();
-    while(it != candidate.end()){
-        if( !( mail_id[*it].find(keyword1) && mail_id[*it].find(keyword2) )){
-            it = candidate.erase(it);
-        }
-        else{
-            it++;
-        }
-    }
-}
 void
 MailDB::print_candidate(){
     set<int> :: iterator it = candidate.begin();
@@ -597,3 +637,30 @@ MailDB::print_candidate(){
 }
 
 
+int main()
+{
+    string inputLine;
+    vector<string> lineSplit;
+
+    MailDB mailDB;
+
+    while(getline(cin, inputLine)){
+        if(inputLine.size()==0) break;
+        split(inputLine, lineSplit);
+        if (lineSplit[0]=="add") {
+            mailDB.add(lineSplit[1]);
+        }
+        else if (lineSplit[0]=="remove") {
+            unsigned id = stoi(lineSplit[1]);
+            mailDB.remove(id);
+        }
+        else if (lineSplit[0]=="longest") {
+            mailDB.longest();
+        }
+        else if (lineSplit[0]=="query") {
+            vector<string> args(lineSplit.begin()+1, lineSplit.end());
+            mailDB.query(args, LESS);
+        }
+        inputLine.clear();
+    }
+}
