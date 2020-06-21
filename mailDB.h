@@ -79,13 +79,6 @@ struct OPERATOR
 };
 
 
-enum MODE
-{
-    DEFAULT,
-    LESS,
-    MORE
-};
-
 class MailDB
 {
 public:
@@ -97,7 +90,7 @@ public:
     void add(std::string& path);
     void remove(int id);
     void longest();
-    void query(std::vector<std::string>& args, MODE mode);
+    void query(std::vector<std::string>& args);
 
 private:
     // We may need more member data or function hear

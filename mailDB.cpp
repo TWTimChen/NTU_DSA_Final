@@ -9,6 +9,10 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 
 
+void toLowerCase(char & c){
+    if(isalpha(c))
+        c = tolower(c);
+}
 void
 Mail::print()
 {
@@ -57,7 +61,6 @@ MailDB::add(string& path)
 
         readfile(path, mail);
         cout << mail->id << '\n';
-
 
         // check mail information
         #ifdef DEBUG
@@ -133,30 +136,16 @@ MailDB::longest()
 }
 
 void
-MailDB::query(vector<string>& args, MODE mode)
+MailDB::query(vector<string>& args)
 {
-    vector<string> argsAug(4);
-    switch (mode) {
-        case LESS:
-            for (unsigned i=0; i<args.size()-1; i++)
-                args[i] = args[i].substr(1);
-            queryWithCond(args);
-            break;
-        case MORE:
-            for (unsigned i=0; i<args.size()-1; i++){
-                if (args[i][1] == 'f')
-                    argsAug[0] = args[i].substr(2);
-                else if (args[i][1] == 't')
-                    argsAug[1] = args[i].substr(2);
-                else if (args[i][1] == 'd')
-                    argsAug[2] = args[i].substr(2);
-            }
-            argsAug[3] = args[args.size()-1];
-            queryWithCond(argsAug);
-            break;
-        default:
-            break;
+    for (unsigned i=0; i<args.size()-1; i++){
+        for_each(args[i].begin(), args[i].end(), toLowerCase);
+        args[i] = args[i].substr(1);
     }
+    for_each(args[args.size()-1].begin(), args[args.size()-1].end(), toLowerCase);
+
+    queryWithCond(args);
+
 }
 
 bool
@@ -192,6 +181,7 @@ MailDB::readfile(string& path, Mail* mail)
             case FROM:
                 split(inputLine, lineSplit);
                 from = lineSplit[1];
+                for_each(from.begin(), from.end(), toLowerCase);
                 mail->from = from;
                 break;
             case DATE:
@@ -215,6 +205,7 @@ MailDB::readfile(string& path, Mail* mail)
             case TO:
                 split(inputLine, lineSplit);
                 to = lineSplit[1];
+                for_each(to.begin(), to.end(), toLowerCase);
                 mail->to = to;
                 break;
             case CONTENT:
