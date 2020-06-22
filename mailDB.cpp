@@ -58,6 +58,8 @@ MailDB::add(string& path)
 
     readfile(path, mail);
 
+    //mail->print();
+
 
     // check mail information
     #ifdef DEBUG
@@ -116,7 +118,7 @@ void
 MailDB::longest()
 {
     if (length.size() == 0)
-    cout<<"-"<<'\n';
+        cout<<"-"<<'\n';
     else{
         multimap<int,int>::iterator it = length.begin();
         int smallest_id = it->second;
@@ -181,7 +183,10 @@ MailDB::readfile(string& path, Mail* mail)
                 split(inputLine, lineSplit);
                 date = lineSplit[3];                        // year
                 date += getMonthIndex(lineSplit[2]);        // month (in util.h)
-                date += lineSplit[1];                       // day
+                if(lineSplit[1].size() == 1)
+                    date += ("0" + lineSplit[1]);
+                else
+                    date += lineSplit[1];                       // day
                 lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
                 date += lineSplit[5];                       // hour minite
                 mail->date = date ;
@@ -197,7 +202,10 @@ MailDB::readfile(string& path, Mail* mail)
                 break;
             case SUBJECT:
                 split(inputLine, lineSplit);
-                mail->subject = lineSplit[1];
+                for(int i =0;i<lineSplit.size();i++){
+                    mail->subject += lineSplit[i];
+                    mail->subject += " ";
+                }
                 break;
             case TO:
                 split(inputLine, lineSplit);
@@ -210,6 +218,7 @@ MailDB::readfile(string& path, Mail* mail)
                 break;
             default:
                 if (inputLine.size()==0) break;
+                mail->content += " ";
                 mail->content += inputLine;
                 break;
         }
@@ -255,7 +264,7 @@ MailDB::readfile(string& path, Mail* mail)
     }
     mail->content_set.emplace(s);
     mail->l=tmp;
-    length.insert( pair<int,int>( tmp ,id) );
+    length.insert( pair<int,int>( tmp ,id ) );
 
 //put into subject
     p = &(mail->subject)[0];
@@ -489,8 +498,10 @@ MailDB::queryOnlyExpr(string& expr)
 
     else{
         set<int>::iterator it= result.begin();
+        cout<< *it ;
+        it++;
         for(it; it!=result.end(); ++it)
-            cout<< *it <<" ";
+            cout<<" "<< *it ;
     }
 }
 
@@ -690,7 +701,6 @@ MailDB:: getdate(string & str){
         s[0] = str.substr(1,12);
         s[1] = str.substr(14,12);
     }
-    cout<<"";
     return s;
 }
 
