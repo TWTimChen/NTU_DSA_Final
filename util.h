@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <map>
 
 inline 
@@ -42,6 +43,21 @@ std::string getMonthIndex(std::string name)
     if( months.find(name) != months.cend() )
         return iter->second;
     return "00";
+}
+
+inline
+void cleanStr(std::string& rawStr)
+{
+    std::transform(
+        rawStr.begin(),
+        rawStr.end(),
+        rawStr.begin(),
+        ::tolower
+    );
+
+    typedef bool(*DecisionFn)(char);
+    DecisionFn isClear { [](char c) { return !std::isalnum(c); } };
+    std::replace_if(rawStr.begin(), rawStr.end(), isClear, ' '); 
 }
 
 #endif

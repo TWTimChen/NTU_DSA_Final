@@ -2,12 +2,13 @@
 #define MAIL_DB_H
 
 #include <iostream>
+#include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <stack>
 #include <unordered_set>
-#include <queue>
+#include <set>
 #include <sstream>
 
 /////////////////////////////////////////////////////////////////////////////
@@ -21,18 +22,24 @@ public:
     Mail(unsigned& ID): id(ID) {};
     ~Mail() {};
 
-    bool searchContent(std::string& keyword);
     void print();
 
     // Enable MailDB access private data
     friend class MailDB;
 private:
+    bool searchContent(std::string& keyword);
+    bool isInDate(std::string& dateS, std::string& dateE);
+    void initContent();
+
     unsigned id;
     std::string subject;
     std::string from;
     std::string to;
     std::string date;
     std::string content;
+
+    std::unordered_set<std::string> contentSet;
+    unsigned len;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,6 +81,18 @@ struct OPERATOR
 
 typedef std::pair<int, unsigned> LENGTH;
 
+struct cmpLENGTH {
+    bool operator()(const LENGTH& a, const LENGTH& b) const 
+    {
+        if (a.first>b.first)
+            return true;
+        else if (a.first==b.first)
+            return a.second<b.second;
+        else
+            return false;
+    }
+};
+
 enum MODE
 {
     DEFAULT,
@@ -99,11 +118,12 @@ private:
     // [add] 
     bool checkId(std::string& path);
     void readfile(std::string& path, Mail* mail);
+    void setLookUp(std::string& path, Mail* mail);
     // This set stores added path
     std::unordered_set<std::string> fileAdded;
 
     // [longest]
-    std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
+    std::set<LENGTH, cmpLENGTH> lengthMap;
 
     // [query]
     // 1. query only with expression
@@ -111,15 +131,17 @@ private:
     // You can costumize your situation
     // and don't forget to change the interface too!
     
-    void queryOnlyExpr(std::string& expr);
     void queryWithCond(std::vector<std::string>& args);
+    void queryOnlyExpr(std::string& expr);
     void parseExpr(std::string& expr, std::vector<OPERATOR>& preorder);
     void pre2post(std::vector<OPERATOR>& preorder, std::vector<OPERATOR>& postorder);
     
     // TO-Do:
     // A container store mails
     // and maybe other containers to store content
-
+    std::vector<Mail*> mailVec;
+    std::vector<Mail*> BufPrev;
+    std::vector<Mail*> BufNext;
 };
 
 #endif

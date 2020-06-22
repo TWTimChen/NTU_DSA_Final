@@ -8,12 +8,6 @@ using namespace std;
 /////////////////////    Class Mail member functions    /////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-bool 
-Mail::searchContent(string& keyword)
-{
-    return false;
-}
-
 void
 Mail::print()
 {
@@ -24,11 +18,43 @@ Mail::print()
     << "From: " << from << endl
     << "To: " << to << endl
     << "Date: " << date << endl
-    << "Content: \n" << content << endl;
+    << "Length: " << len << endl
+    << "Content: \n";
 
-    cout 
+    for (auto iter=contentSet.begin(); iter!=contentSet.end(); iter++) 
+        cout << *iter << " ";
+    cout << endl;
+
+    cout
     << "--------------------------------\n"
     << endl;
+}
+
+bool 
+Mail::searchContent(string& keyword)
+{
+    return contentSet.find(keyword) != contentSet.end();
+}
+
+bool
+Mail::isInDate(string& dateS, string& dateE)
+{
+    return date>=dateS && date<=dateE;
+}
+
+void 
+Mail::initContent()
+{
+    // create local set and content length
+    vector<string> contentSplit;
+    split(content, contentSplit);
+    len = 0;
+    for (int i=0; i<contentSplit.size(); i++) {
+        contentSet.insert(contentSplit[i]);
+        len += contentSplit[i].size();
+    }
+    contentSet.insert(subject);
+    content.clear();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -45,33 +71,48 @@ MailDB::add(string& path)
     else {
         fileAdded.insert(path);
 
+        // parse the email
         Mail* mail = new Mail;
         readfile(path, mail);
-        cout << mail->id << endl;
-        cout << endl;
+        mail->initContent();
 
-        // check mail information
+        // insert LENTH to the map
+        lengthMap.insert(LENGTH(mail->len, mail->id));
+        // Insert the new mail in to the container
+        mailVec.push_back(mail);
+
+        cout << mailVec.size() << endl;
+
         #ifdef DEBUG
         mail->print(); 
         #endif
-
-        // TO-Do:
-        // Insert the new mail in to the container
     }
 }
 
 void 
 MailDB::remove(unsigned id)
 {
-    // Note:
-    // Remember to delete the mail pointer
-    cout << "Execute Remove :" << id << endl;
+    Mail* removeMail(0);
+    for (auto iter=mailVec.begin(); iter!=mailVec.end(); ++iter)
+        if ((*iter)->id == id) {
+            removeMail = *iter;
+            mailVec.erase(iter);
+            delete removeMail;
+            break;
+        }
+
+    if (removeMail)
+        cout << mailVec.size() << endl;
+    else
+        cout << "-" << endl;
 }
 
 void 
 MailDB::longest()
 {
-    cout << "Execate Remove :" << endl;
+    cout 
+    << lengthMap.begin()->second << " "
+    << lengthMap.begin()->first << endl;
 }
 
 void
@@ -87,9 +128,9 @@ MailDB::query(vector<string>& args, MODE mode)
         case MORE:
             for (unsigned i=0; i<args.size()-1; i++){
                 if (args[i][1] == 'f')
-                    argsAug[0] = args[i].substr(2);
+                    argsAug[0] = args[i].substr(3, args[i].size()-4);
                 else if (args[i][1] == 't')
-                    argsAug[1] = args[i].substr(2);
+                    argsAug[1] = args[i].substr(3, args[i].size()-4);
                 else if (args[i][1] == 'd')
                     argsAug[2] = args[i].substr(2);
             }
@@ -133,6 +174,7 @@ MailDB::readfile(string& path, Mail* mail)
             case FROM:
                 split(inputLine, lineSplit);
                 mail->from = lineSplit[1];
+                cleanStr(mail->from);
                 break;
             case DATE:
                 split(inputLine, lineSplit);
@@ -141,7 +183,8 @@ MailDB::readfile(string& path, Mail* mail)
                 date += lineSplit[1];                       // day
                 lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
                 date += lineSplit[5];                       // hour minite
-                mail->date = date ;
+                mail->date = date;
+                cleanStr(mail->date);
                 break;
             case ID:
                 split(inputLine, lineSplit);
@@ -150,10 +193,12 @@ MailDB::readfile(string& path, Mail* mail)
             case SUBJECT:
                 split(inputLine, lineSplit);
                 mail->subject = lineSplit[1];
+                cleanStr(mail->subject);
                 break;
             case TO:
                 split(inputLine, lineSplit);
                 mail->to = lineSplit[1];
+                cleanStr(mail->to);
                 break;
             case CONTENT:
                 mail->content = "";
@@ -161,6 +206,7 @@ MailDB::readfile(string& path, Mail* mail)
             default:
                 if (inputLine.size()==0) break;
                 mail->content += inputLine;
+                cleanStr(mail->content);
                 break;
         }
         lineCount++;
@@ -168,47 +214,156 @@ MailDB::readfile(string& path, Mail* mail)
 }
 
 void 
-MailDB::queryOnlyExpr(string& expr)
-{
-    vector<OPERATOR> preorder;
-    vector<OPERATOR> postorder;
-
-    parseExpr(expr, preorder);
-    #ifdef DEBUG
-    cerr << "Preorder expression: ";
-    for (unsigned i=0; i<preorder.size(); i++)
-        cerr << preorder[i].obj << " ";
-    cerr << endl;
-    #endif
-
-    pre2post(preorder, postorder);
-
-    #ifdef DEBUG
-    cerr << "Postorder expression: ";
-    for (unsigned i=0; i<postorder.size(); i++)
-        cerr << postorder[i].obj << " ";
-    cerr << endl;
-    #endif
-
-    // TO-DOs
-}
-
-void 
 MailDB::queryWithCond(vector<string>& args)
 {
-
     #ifdef DEBUG
     cout << "Input Query :" << endl;
     for (int i=0; i<args.size(); i++)
         cout << i+1 << ". " << args[i] << endl;
     cout << endl;
     #endif
-    // TO-DOs
+    // Condition Filter Pipline
+    // 1. initialize buffer
+    // 2. from -> to -> date filter
+    // 3. pass expr to queryOnlyExpr()
+    BufPrev = mailVec;
 
-    string expr = args[args.size()-1];
+    if (args[0]!="") {
+        cleanStr(args[0]); //tolower
+        for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
+            if ((*iter)->from == args[0])
+                BufNext.push_back(*iter);
+        swap(BufPrev, BufNext);
+        BufNext.clear();
+    }
+    if (args[1]!="") {
+        cleanStr(args[1]); //tolower
+        for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
+            if ((*iter)->to == args[1])
+                BufNext.push_back(*iter);
+        swap(BufPrev, BufNext);
+        BufNext.clear();
+    }
+    if (args[2]!="") {
+        string start, end;
+        int pos = args[2].find("~");
+        if (pos==0) {
+            start = "0";
+            end = args[2].substr(1);
+        }
+        else if (pos==args[2].size()-1) {
+            start = args[2].substr(0, pos);
+            end = "9";
+        }
+        else {
+            start = args[2].substr(0, pos);
+            end = args[2].substr(pos+1);
+        }
+        
+        for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
+            if ((*iter)->isInDate(start, end))
+                BufNext.push_back(*iter);
+        swap(BufPrev, BufNext);
+        BufNext.clear();
+    }
+
+    #ifdef DEBUG
+    cout << "After Condition Filters: ";
+    for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
+        cout << (*iter)->id << " ";
+    cout << endl;
+    #endif
+
+    string expr = args[3];
     queryOnlyExpr(expr);
 
-    // TO-DOs
+    // query output
+    if (BufPrev.size()==0)
+        cout << "-" << endl;
+    else {
+        set<int> output;
+        for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
+            output.insert((*iter)->id);
+        for (auto iter=output.begin(); iter!=output.end(); iter++)
+            cout << *iter << " ";
+        cout << endl;
+    }
+}
+
+void 
+MailDB::queryOnlyExpr(string& expr)
+{
+    vector<OPERATOR> prefix;
+    vector<OPERATOR> postfix;
+
+    parseExpr(expr, prefix);
+    #ifdef DEBUG
+    cerr << "Prefix Expression: ";
+    for (unsigned i=0; i<prefix.size(); i++)
+        cerr << prefix[i].obj << " ";
+    cerr << endl;
+    #endif
+
+    pre2post(prefix, postfix);
+
+    #ifdef DEBUG
+    cerr << "Postfix Expression: ";
+    for (unsigned i=0; i<postfix.size(); i++)
+        cerr << postfix[i].obj << " ";
+    cerr << endl;
+    #endif
+
+    // Expression Filter Pipline
+    stack<vector<int> > keyBuf;
+    for (int i=0; i<postfix.size(); i++) {
+        vector<int> vec1;
+        vector<int> vec2;
+        string key;
+        switch (postfix[i].prec) {
+            case STRING:
+                vec1.resize(BufPrev.size());
+                for (int i=0; i<BufPrev.size(); i++) {
+                    key = postfix[i].obj;
+                    vec1[i] = BufPrev[i]->searchContent(key);
+                }
+                keyBuf.push(vec1);
+                break;
+            case NOT:
+                vec1 = keyBuf.top();
+                keyBuf.pop();
+                for (int i=0; i<BufPrev.size(); i++)
+                    vec1[i] = !vec1[i];
+                keyBuf.push(vec1);
+                break;
+            case AND:
+                vec1 = keyBuf.top();
+                keyBuf.pop();
+                vec2 = keyBuf.top();
+                keyBuf.pop();
+                for (int i=0; i<BufPrev.size(); i++)
+                    vec1[i] = vec1[i]&&vec2[i];
+                keyBuf.push(vec1);
+                break;
+            case OR:
+                vec1 = keyBuf.top();
+                keyBuf.pop();
+                vec2 = keyBuf.top();
+                keyBuf.pop();
+                for (int i=0; i<BufPrev.size(); i++)
+                    vec1[i] = vec1[i]||vec2[i];
+                keyBuf.push(vec1);
+                break;
+            default:
+                break;
+        }
+    }
+
+    assert(keyBuf.size()==1);
+    vector<int> filter = keyBuf.top();
+    for (int i=0; i<BufPrev.size(); i++)
+        if (filter[i])
+            BufNext.push_back(BufPrev[i]);
+    swap(BufPrev, BufNext);    
 }
 
 void
@@ -219,8 +374,11 @@ MailDB::parseExpr(string& expr, vector<OPERATOR>& preorder)
         pin = pos;
         while (isalnum(expr[pos]))
             pos++;
-        if(pos-pin)
-            preorder.push_back(OPERATOR(expr.substr(pin, pos-pin), STRING));
+        if(pos-pin) {
+            string key = expr.substr(pin, pos-pin);
+            cleanStr(key);
+            preorder.push_back(OPERATOR(key, STRING));
+        }
         
         if (pos==expr.size())
             break;
