@@ -50,26 +50,22 @@ Mail::find(const string& keyword){
 void
 MailDB::add(string& path)
 {
-    // if the path is readed, ignore this path
-    if (checkId(path)) {
-        cout << "-" << endl;
-    }
-    else {
-        fileAdded.insert(path);
 
-        Mail* mail = new Mail;
+    fileAdded.insert(path);
 
-        readfile(path, mail);
-        cout << mail_id.size() << '\n';
+    Mail* mail = new Mail;
+    //cout<<"debug "<<path<<endl;
 
-        // check mail information
-        #ifdef DEBUG
-            mail->print();
-        #endif
-        // TO-Do:
-        // Insert the new mail in to the container
-        mail = NULL;
-    }
+    readfile(path, mail);
+
+
+    // check mail information
+    #ifdef DEBUG
+        mail->print();
+    #endif
+    // TO-Do:
+    // Insert the new mail in to the container
+    mail = NULL;
 }
 
 void
@@ -79,17 +75,12 @@ MailDB::remove(int id)
         cout<< "-"<<'\n';
         return;
     }
-
-    //cout << "Execute Remove :" << id << endl;
     string from = mail_id[id].from;
     string to = mail_id[id].to;
     string date = mail_id[id].date;
     int l = mail_id[id].l;
 
-    //not sure if this work:
-    //Mail* mail = &(mail_id[id]);
     mail_id.erase(id);
-    //delete mail;
 
     mail_from[from].erase(id);
     if(mail_from[from].size() == 0)
@@ -117,17 +108,13 @@ MailDB::remove(int id)
             break;
         }
     }
-    if(mail_id.size() == 0)
-        cout<<'-'<<'\n';
-    else
-        cout << mail_id.size() <<'\n';
+
+    cout << mail_id.size() <<'\n';
 }
 
 void
 MailDB::longest()
 {
-    //cout << "Execute Longest :" << endl;
-
     if (length.size() == 0)
     cout<<"-"<<'\n';
     else{
@@ -165,7 +152,8 @@ MailDB::readfile(string& path, Mail* mail)
     ifstream inputFile;
     string inputLine;
     vector<string> lineSplit;
-    inputFile.open(path);
+
+    inputFile.open(path,ios::in);
 
     if (inputFile.fail()) {
         cout
@@ -201,6 +189,10 @@ MailDB::readfile(string& path, Mail* mail)
             case ID:
                 split(inputLine, lineSplit);
                 id = stoi(lineSplit[1]);
+                if(mail_id.find(id)!=mail_id.end()){
+                    cout<< "-"<<'\n';
+                    return;
+                }
                 mail->id = id;
                 break;
             case SUBJECT:
@@ -286,6 +278,7 @@ MailDB::readfile(string& path, Mail* mail)
     mail->content_set.emplace(s);
 
     mail_id[id] = *mail;
+    cout << mail_id.size() << '\n';
 }
 
 set<int>
@@ -407,7 +400,7 @@ MailDB::queryOnlyExpr(string& expr)
     stack<OPERATOR> keywords;
     stack<set<int> > subset;
     for(int i = 0 ; i < postorder.size(); i++){
-        cout<<"";
+        //cout<<"";
         if(postorder[i].prec == STRING ){
             #ifdef DEBUG
             cerr << "String in stack: "<<postorder[i].obj<<endl;
@@ -493,6 +486,7 @@ MailDB::queryOnlyExpr(string& expr)
 
     if(result.size() == 0)
         cout<< "-" ;
+
     else{
         set<int>::iterator it= result.begin();
         for(it; it!=result.end(); ++it)
@@ -513,40 +507,45 @@ MailDB::queryWithCond(vector<string>& args)
     // TO-DOs
 
     candidate.clear();
+    int flag = 0;
     if(args.size() !=1){
         for (int i=0; i<args.size()-1; i++){
             if(args[i][0] == 'f'){
                 string from = getstring(args[i]);
                 set<int> f = find_by_from(from);
-                if(candidate.size() == 0)
+                if(flag == 0)
                     candidate = f;
                 else{
                     set<int> tmp;
                     set_intersection(f.begin(), f.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
                     candidate = tmp; //之後改成in-place intersection應該可以快一些..
                 }
+                flag = 1;
             }
             else if(args[i][0] == 't'){
                 string to = getstring(args[i]);
                 set<int> t = find_by_to(to);
-                if(candidate.size() == 0)
+
+                if(flag == 0)
                     candidate = t;
                 else{
                     set<int> tmp;
                     set_intersection(t.begin(), t.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
                     candidate = tmp; //之後改成in-place intersection應該可以快一些..
                 }
+                flag = 1;
             }
             else if(args[i][0] == 'd'){
                 vector<string> date = getdate(args[i]);
                 set<int> d = find_by_date(date[0],date[1]);
-                if(candidate.size() == 0)
+                if(flag == 0)
                     candidate = d;
                 else{
                     set<int> tmp;
                     set_intersection(d.begin(), d.end(), candidate.begin(), candidate.end(), inserter(tmp, tmp.begin()) );
                     candidate = tmp;
                 }
+                flag = 1;
             }
         }
     }

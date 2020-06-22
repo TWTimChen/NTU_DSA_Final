@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 
-inline 
+inline
 void split(const std::string& str, std::vector<std::string>& cont, char delim = ' ')
 {
     std::stringstream ss(str);
@@ -20,7 +20,7 @@ void split(const std::string& str, std::vector<std::string>& cont, char delim = 
 inline
 std::string getMonthIndex(std::string name)
 {
-    std::map<std::string, std::string> months 
+    std::map<std::string, std::string> months
     {
         { "January", "01" },
         { "February", "02" },
