@@ -21,7 +21,7 @@ Mail::print()
     << "Length: " << len << endl
     << "Content: \n";
 
-    for (auto iter=contentSet.begin(); iter!=contentSet.end(); iter++) 
+    for (auto iter=contentSet.begin(); iter!=contentSet.end(); iter++)
         cout << *iter << " ";
     cout << endl;
 
@@ -53,7 +53,10 @@ Mail::initContent()
         contentSet.insert(contentSplit[i]);
         len += contentSplit[i].size();
     }
-    contentSet.insert(subject);
+    split(subject, contentSplit);
+    for (int i=0; i<contentSplit.size(); i++) {
+        contentSet.insert(contentSplit[i]);
+    }
     content.clear();
 }
 
@@ -65,11 +68,13 @@ void
 MailDB::add(string& path)
 {
     // if the path is readed, ignore this path
-    if (checkId(path)) {
+    int pos = path.find("l");
+    unsigned id = stoi(path.substr(pos+1));
+    if (checkId(id)) {
         cout << "-" << endl;
     }
     else {
-        fileAdded.insert(path);
+        fileAdded.insert(id);
 
         // parse the email
         Mail* mail = new Mail;
@@ -100,6 +105,10 @@ MailDB::remove(unsigned id)
             delete removeMail;
             break;
         }
+    
+    auto iter = fileAdded.find(id);
+    if (iter != fileAdded.end())
+        fileAdded.erase(iter);
 
     if (removeMail)
         cout << mailVec.size() << endl;
@@ -143,9 +152,9 @@ MailDB::query(vector<string>& args, MODE mode)
 }
 
 bool
-MailDB::checkId(string& path)
+MailDB::checkId(unsigned& id)
 {
-    return fileAdded.find(path) != fileAdded.end();
+    return fileAdded.find(id) != fileAdded.end();
 }
 
 void
@@ -180,6 +189,8 @@ MailDB::readfile(string& path, Mail* mail)
                 split(inputLine, lineSplit);
                 date = lineSplit[3];                        // year
                 date += getMonthIndex(lineSplit[2]);        // month (in util.h)
+                if (lineSplit[1].size()==1)
+                    date += "0";
                 date += lineSplit[1];                       // day
                 lineSplit[5].erase(lineSplit[5].begin()+2); // remove ":"
                 date += lineSplit[5];                       // hour minite
@@ -191,7 +202,7 @@ MailDB::readfile(string& path, Mail* mail)
                 mail->id = stoi(lineSplit[1]);
                 break;
             case SUBJECT:
-                split(inputLine, lineSplit);
+                split(inputLine, lineSplit, ':');
                 mail->subject = lineSplit[1];
                 cleanStr(mail->subject);
                 break;
@@ -206,6 +217,7 @@ MailDB::readfile(string& path, Mail* mail)
             default:
                 if (inputLine.size()==0) break;
                 mail->content += inputLine;
+                mail->content += " ";
                 cleanStr(mail->content);
                 break;
         }
@@ -248,12 +260,12 @@ MailDB::queryWithCond(vector<string>& args)
         string start, end;
         int pos = args[2].find("~");
         if (pos==0) {
-            start = "0";
+            start = "000001010000";
             end = args[2].substr(1);
         }
         else if (pos==args[2].size()-1) {
             start = args[2].substr(0, pos);
-            end = "9";
+            end = "999912312359";
         }
         else {
             start = args[2].substr(0, pos);
@@ -284,10 +296,15 @@ MailDB::queryWithCond(vector<string>& args)
         set<int> output;
         for (auto iter=BufPrev.begin(); iter!=BufPrev.end(); iter++)
             output.insert((*iter)->id);
-        for (auto iter=output.begin(); iter!=output.end(); iter++)
-            cout << *iter << " ";
+        auto iter=output.begin();
+        cout << *iter;
+        iter++;
+        for (iter; iter!=output.end(); iter++)
+            cout << " " << *iter;
         cout << endl;
     }
+    BufPrev.clear();
+    BufNext.clear();
 }
 
 void 
@@ -315,15 +332,15 @@ MailDB::queryOnlyExpr(string& expr)
 
     // Expression Filter Pipline
     stack<vector<int> > keyBuf;
-    for (int i=0; i<postfix.size(); i++) {
+    for (int op=0; op<postfix.size(); op++) {
         vector<int> vec1;
         vector<int> vec2;
         string key;
-        switch (postfix[i].prec) {
+        switch (postfix[op].prec) {
             case STRING:
                 vec1.resize(BufPrev.size());
+                key = postfix[op].obj;
                 for (int i=0; i<BufPrev.size(); i++) {
-                    key = postfix[i].obj;
                     vec1[i] = BufPrev[i]->searchContent(key);
                 }
                 keyBuf.push(vec1);
@@ -363,7 +380,7 @@ MailDB::queryOnlyExpr(string& expr)
     for (int i=0; i<BufPrev.size(); i++)
         if (filter[i])
             BufNext.push_back(BufPrev[i]);
-    swap(BufPrev, BufNext);    
+    swap(BufPrev, BufNext);
 }
 
 void

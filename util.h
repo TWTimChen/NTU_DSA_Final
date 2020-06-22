@@ -45,6 +45,23 @@ std::string getMonthIndex(std::string name)
     return "00";
 }
 
+/*
+inline
+void cleanStr(std::string& rawStr)
+{
+    std::transform(
+        rawStr.begin(),
+        rawStr.end(),
+        rawStr.begin(),
+        ::tolower
+    );
+
+    typedef bool(*DecisionFn)(char);
+    DecisionFn isClear { [](char c) { return !std::isalnum(c); } };
+    std::replace_if(rawStr.begin(), rawStr.end(), isClear, ' '); 
+}
+*/
+
 inline
 void cleanStr(std::string& rawStr)
 {

@@ -116,11 +116,11 @@ private:
     // We may need more member data or function hear
 
     // [add] 
-    bool checkId(std::string& path);
+    bool checkId(unsigned& id);
     void readfile(std::string& path, Mail* mail);
     void setLookUp(std::string& path, Mail* mail);
     // This set stores added path
-    std::unordered_set<std::string> fileAdded;
+    std::unordered_set<unsigned> fileAdded;
 
     // [longest]
     std::set<LENGTH, cmpLENGTH> lengthMap;
