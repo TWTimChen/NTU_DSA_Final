@@ -339,8 +339,7 @@ MailDB:: operator_or (string & keyword, set<int> & sset){
     while(it!= candidate.end()){
         if( (mail_id[*it].find(keyword)) )
             sset.emplace(*it);
-        else
-            ++it;
+        ++it;
     }
 }
 
@@ -408,6 +407,7 @@ MailDB::queryOnlyExpr(string& expr)
     stack<OPERATOR> keywords;
     stack<set<int> > subset;
     for(int i = 0 ; i < postorder.size(); i++){
+        cout<<"";
         if(postorder[i].prec == STRING ){
             #ifdef DEBUG
             cerr << "String in stack: "<<postorder[i].obj<<endl;
@@ -702,6 +702,7 @@ MailDB:: getstring(string & str){
     return s;
 }
 
+
 void
 MailDB::print_candidate(){
     set<int> :: iterator it = candidate.begin();
@@ -710,5 +711,3 @@ MailDB::print_candidate(){
     }
     cout<<'\n';
 }
-
-

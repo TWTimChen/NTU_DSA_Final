@@ -6,13 +6,10 @@
 
 using namespace std;
 
-int main()
-{
+int main(){
     string inputLine;
     vector<string> lineSplit;
-
     MailDB mailDB;
-
     while(getline(cin, inputLine)){
         if(inputLine.size()==0) break;
         split(inputLine, lineSplit);
