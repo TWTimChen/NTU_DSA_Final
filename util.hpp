@@ -1,0 +1,55 @@
+//
+//  util.hpp
+//  Mail
+//
+//  Created by 李季澄 on 2020/6/21.
+//  Copyright © 2020 李季澄. All rights reserved.
+//
+
+#ifndef UTIL_H
+#define UTIL_H
+
+#include <sstream>
+#include <string>
+#include <vector>
+#include <map>
+
+inline
+void split(const std::string& str, std::vector<std::string>& cont, char delim = ' ')
+{
+    std::stringstream ss(str);
+    std::string token;
+    cont.clear();
+    while (getline(ss, token, delim)) {
+        cont.push_back(token);
+    }
+}
+
+inline
+std::string getMonthIndex(std::string name)
+{
+    std::map<std::string, std::string> months
+    {
+        { "January", "01" },
+        { "February", "02" },
+        { "March", "03" },
+        { "April", "04" },
+        { "May", "05" },
+        { "June", "06" },
+        { "July", "07" },
+        { "August", "08" },
+        { "September", "09" },
+        { "October", "10" },
+        { "November", "11" },
+        { "December", "12" }
+    };
+
+    std::map<std::string, std::string>::iterator iter;
+    iter = months.find(name);
+
+    if( months.find(name) != months.cend() )
+        return iter->second;
+    return "00";
+}
+
+#endif
