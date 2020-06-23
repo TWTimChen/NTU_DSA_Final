@@ -1,5 +1,5 @@
 CXX=g++
-CFLAGS= -Wall -std=c++11
+CFLAGS= -Wall -std=c++11 -Os
 EXEC=run
 
 all: run
