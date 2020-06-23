@@ -68,7 +68,7 @@ void
 MailDB::add(string& path)
 {
     // if the path is readed, ignore this path
-    int pos = path.find("l");
+    int pos = path.find_last_of("l");
     unsigned id = stoi(path.substr(pos+1));
     if (checkId(id)) {
         cout << "-" << endl;
@@ -102,16 +102,22 @@ MailDB::remove(unsigned id)
         if ((*iter)->id == id) {
             removeMail = *iter;
             mailVec.erase(iter);
+
+            auto iterA = fileAdded.find(id);
+            if (iterA != fileAdded.end())
+                fileAdded.erase(iterA);
+
+            auto iterL = lengthMap.find(LENGTH(removeMail->len, removeMail->id));
+            if (iterL != lengthMap.end())
+                lengthMap.erase(iterL);
+
             delete removeMail;
             break;
         }
-    
-    auto iter = fileAdded.find(id);
-    if (iter != fileAdded.end())
-        fileAdded.erase(iter);
 
-    if (removeMail)
+    if (removeMail) {
         cout << mailVec.size() << endl;
+    }
     else
         cout << "-" << endl;
 }
@@ -119,9 +125,14 @@ MailDB::remove(unsigned id)
 void 
 MailDB::longest()
 {
-    cout 
-    << lengthMap.begin()->second << " "
-    << lengthMap.begin()->first << endl;
+    if (lengthMap.size()==0) {
+        cout << "-" << endl;
+    }
+    else {
+        cout 
+        << lengthMap.begin()->second << " "
+        << lengthMap.begin()->first << endl;
+    }
 }
 
 void
