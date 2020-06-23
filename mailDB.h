@@ -96,10 +96,8 @@ private:
     // We may need more member data or function hear
 
     // [add]
-    bool checkId(std::string& path);
     void readfile(std::string& path, Mail* mail);
     // This set stores added path
-    std::unordered_set<std::string> fileAdded;
 
     // [longest]
     std::multimap<int,int,std::greater<int> > length;
@@ -114,7 +112,6 @@ private:
 
     // function for query with conditions
     std::set<int> candidate;
-    void print_candidate();
     std::set<int> find_by_date(const std::string& date_l,const std::string& date_u);
     std::set<int> find_by_from(const std::string& from);
     std::set<int> find_by_to(const std::string& to);

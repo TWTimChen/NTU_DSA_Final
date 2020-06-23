@@ -4,14 +4,18 @@
 
 using namespace std;
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////    Class Mail member functions    /////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
 
 void toLowerCase(char & c){
     if(isalpha(c))
         c = tolower(c);
+}
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////    Class Mail member functions    /////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+Mail::find(const string& keyword){
+    return !(content_set.find(keyword) == content_set.end());
 }
 void
 Mail::print()
@@ -38,11 +42,6 @@ Mail::print()
     << endl;
 }
 
-bool
-Mail::find(const string& keyword){
-    return !(content_set.find(keyword) == content_set.end());
-}
-
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////   Class MailDB member functions   /////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -50,23 +49,10 @@ Mail::find(const string& keyword){
 void
 MailDB::add(string& path)
 {
-
-    fileAdded.insert(path);
-
     Mail* mail = new Mail;
-    //cout<<"debug "<<path<<endl;
-
     readfile(path, mail);
 
     //mail->print();
-
-
-    // check mail information
-    #ifdef DEBUG
-        mail->print();
-    #endif
-    // TO-Do:
-    // Insert the new mail in to the container
     mail = NULL;
 }
 
@@ -84,14 +70,16 @@ MailDB::remove(int id)
 
     mail_id.erase(id);
 
-    mail_from[from].erase(id);
-    if(mail_from[from].size() == 0)
+
+    if(mail_from[from].size() == 1)
         mail_from.erase(from);
+    else
+        mail_from[from].erase(id);
 
-    mail_to[to].erase(id);
-    if(mail_to[to].size() == 0)
+    if(mail_to[to].size() == 1)
         mail_to.erase(to);
-
+    else
+        mail_to[to].erase(id);
 
     multimap<string,int>::iterator itlow = mail_date.lower_bound(date);
     multimap<string,int>::iterator itup = mail_date.upper_bound(date);
@@ -124,6 +112,7 @@ MailDB::longest()
         int smallest_id = it->second;
         int largest_length = it->first;
         for(it; it->first == largest_length; it++ ){
+            //cout<< it->second;
             if(it->second < smallest_id)
                 smallest_id = it->second;
         }
@@ -142,11 +131,6 @@ MailDB::query(vector<string>& args)
     queryWithCond(args);
 }
 
-bool
-MailDB::checkId(string& path)
-{
-    return fileAdded.find(path) != fileAdded.end();
-}
 
 void
 MailDB::readfile(string& path, Mail* mail)
@@ -304,9 +288,23 @@ MailDB:: operator_not (string & keyword){
 }
 void
 MailDB:: operator_not (set<int> & sset){
-    set<int> tmp;
+    set<int> tmp = candidate;
     set_difference(candidate.begin(), candidate.end(), sset.begin(), sset.end(), inserter(tmp, tmp.begin()) );
     sset = tmp;
+    // set<int>::iterator it1 = tmp.begin();
+    // set<int>::iterator it2 = sset.begin();
+
+    // for(it2; it2!=sset.end() && it1 != tmp.end(); it2++){
+    //     while(*it1 < *it2 ){
+    //         it1++;
+    //         if(it1 == sset.end())
+    //                 break;
+    //     }
+    //     if(*it2 == *it1){
+    //         it1 = tmp.erase(it1);
+    //     }
+    // }
+    // sset = tmp;
 }
 
 set<int>
@@ -347,6 +345,11 @@ MailDB:: operator_or (string & keyword, set<int> & sset){
 
 void
 MailDB:: operator_or (set<int> & sset1, set<int> & sset2){
+    // set<int>::iterator it = sset1.begin();
+    // set<int>::iterator it2 = sset2.begin();
+    // for(it; it!=sset1.end(); it++){
+    //     it2 = sset2.insert(it2, *it);
+    // }
     set<int> tmp;
     set_union(sset1.begin(),sset1.end(),sset2.begin(),sset2.end(),inserter(tmp,tmp.begin()));
     sset2 = tmp;
@@ -378,6 +381,36 @@ MailDB:: operator_and (string & keyword, set<int> & sset){
 void
 MailDB:: operator_and (set<int> & sset1, set<int> & sset2){
     set<int> tmp;
+    // set<int>::iterator it1; //smaller
+    // set<int>::iterator it2;
+    // if(sset1.size() < sset2.size()){
+    //     it1 = sset1.begin();
+    //     it2 = sset2.begin();
+    //     for(it1; it1!=sset1.end() && it2 != sset2.end(); it1++){
+    //         while(*it2 < *it1 ){
+    //             it2++;
+    //             if(it2 == sset2.end())
+    //                     break;
+    //         }
+    //         if(*it2 == *it1){
+    //             tmp.insert(*it1);
+    //         }
+    //     }
+    // }
+    // else{
+    //     it1 = sset2.begin();
+    //     it2 = sset1.begin();
+    //     for(it1; it1!=sset2.end() && it2 != sset1.end(); it1++){
+    //         while(*it2 < *it1 ){
+    //             it2++;
+    //             if(it2 == sset1.end())
+    //                     break;
+    //         }
+    //         if(*it2 == *it1){
+    //             tmp.insert(*it1);
+    //         }
+    //     }
+    // }
     set_intersection(sset1.begin(),sset1.end(),sset2.begin(),sset2.end(),inserter(tmp,tmp.begin()));
     sset2 = tmp;
 }
@@ -389,21 +422,7 @@ MailDB::queryOnlyExpr(string& expr)
     vector<OPERATOR> postorder;
 
     parseExpr(expr, preorder);
-    #ifdef DEBUG
-    cerr << "Preorder expression: ";
-    for (unsigned i=0; i<preorder.size(); i++)
-        cerr << preorder[i].obj << " ";
-    cerr << endl;
-    #endif
-
     pre2post(preorder, postorder);
-
-    #ifdef DEBUG
-    cerr << "Postorder expression: ";
-    for (unsigned i=0; i<postorder.size(); i++)
-        cerr << postorder[i].obj << " ";
-    cerr << endl;
-    #endif
 
     // TO-DOs
     stack<OPERATOR> keywords;
@@ -411,9 +430,6 @@ MailDB::queryOnlyExpr(string& expr)
     for(int i = 0 ; i < postorder.size(); i++){
         //cout<<"";
         if(postorder[i].prec == STRING ){
-            #ifdef DEBUG
-            cerr << "String in stack: "<<postorder[i].obj<<endl;
-            #endif
             keywords.push( postorder[i] );
         }
 
@@ -508,23 +524,14 @@ MailDB::queryOnlyExpr(string& expr)
 void
 MailDB::queryWithCond(vector<string>& args)
 {
-
-    #ifdef DEBUG
-    cout << "Input Query :" << endl;
-    for (int i=0; i<args.size(); i++)
-        cout << i+1 << ". " << args[i] << endl;
-    cout << endl;
-    #endif
-    // TO-DOs
-
     candidate.clear();
-    int flag = 0;
+    bool flag = 0;
     if(args.size() !=1){
         for (int i=0; i<args.size()-1; i++){
             if(args[i][0] == 'f'){
                 string from = getstring(args[i]);
                 set<int> f = find_by_from(from);
-                if(flag == 0)
+                if(!flag)
                     candidate = f;
                 else{
                     set<int> tmp;
@@ -537,7 +544,7 @@ MailDB::queryWithCond(vector<string>& args)
                 string to = getstring(args[i]);
                 set<int> t = find_by_to(to);
 
-                if(flag == 0)
+                if(!flag)
                     candidate = t;
                 else{
                     set<int> tmp;
@@ -575,9 +582,6 @@ MailDB::queryWithCond(vector<string>& args)
     string expr = args[args.size()-1];
     queryOnlyExpr(expr);
     cout << '\n';
-    #ifdef DEBUG
-    cerr<<"query end"<<endl;
-    #endif
 
 }
 
@@ -711,12 +715,3 @@ MailDB:: getstring(string & str){
     return s;
 }
 
-
-void
-MailDB::print_candidate(){
-    set<int> :: iterator it = candidate.begin();
-    for(it; it!=candidate.end(); it++){
-        cout<<*it<<' ';
-    }
-    cout<<'\n';
-}
