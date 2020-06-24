@@ -48,7 +48,6 @@ MailDB::MailDB()
 {
     from_dict.reserve(10000);
     to_dict.reserve(10000);
-    word_dict.reserve(100000000);
     database.reserve(10000);
     
 }
@@ -90,45 +89,41 @@ MailDB::add(string& path)
             to[i] = tolower(to[i]);
         }
 
-        // ID 須先轉為五位數 id5
-        string id5 = to_string(mail->get_id());
-        if (id5.size() == 1)
-            id5 = "0000" + id5;
-        else if (id5.size() == 2)
-            id5 = "000" + id5;
-        else if (id5.size() == 3)
-            id5 = "00" + id5;
-        else if (id5.size() == 4)
-            id5 = "0" + id5;
+        // ID 須先轉為四位數 id4
+        string id4 = to_string(mail->get_id());
+        if (id4.size() == 1)
+            id4 = "000" + id4;
+        else if (id4.size() == 2)
+            id4 = "00" + id4;
+        else if (id4.size() == 3)
+            id4 = "0" + id4;
+        else if (id4.size() == 5) // 10000
+            id4 = "0000";
 
-        string id_date = id5 + date; // 要放進 unordered_set 的資料
         unordered_set< string > current_set; // 目前有的 unordered_set
-        unordered_set< string > id_date_set({id_date}); // 目前沒有，因此新建一個
-        
+    
         // from_dict
         if (from_dict.find(from) == from_dict.end()) // 新的寄件人
         {
-            pair < string, unordered_set<string> > from_dict_data(from, id_date_set);
+            unordered_set< string > *id4_set = new unordered_set< string >({id4});
+            pair < string, unordered_set<string>* > from_dict_data(from, id4_set);
             from_dict.insert(from_dict_data);
         }
         else // 已出現過的寄件人
         {
-            current_set = from_dict[from];
-            current_set.insert(id_date); // 在原有的 unordered_set 補上新郵件
-            from_dict[from] = current_set;
+            from_dict[from]->insert(id4); // 在原有的 unordered_set 補上新郵件
         }
         
         // to_dict
         if (to_dict.find(to) == to_dict.end()) // 新的收件人
         {
-            pair < string, unordered_set<string> > to_dict_data(to, id_date_set);
+            unordered_set< string > *id4_set = new unordered_set< string >({id4});
+            pair < string, unordered_set<string>* > to_dict_data(to, id4_set);
             to_dict.insert(to_dict_data);
         }
         else // 已出現過的收件人
         {
-            current_set = to_dict[to];
-            current_set.insert(id_date); // 在原有的 unordered_set 補上新郵件
-            to_dict[to] = current_set;
+            to_dict[to]->insert(id4);
         }
         
         // word_dict
@@ -159,14 +154,13 @@ MailDB::add(string& path)
                 word = converted_content.substr(first_index, index - first_index);
                 if (word_dict.find(word) == word_dict.end()) // new word
                 {
-                    pair < string, unordered_set<string> > word_dict_data(word, id_date_set);
+                    unordered_set< string > *id4_set = new unordered_set< string >({id4});
+                    pair < string, unordered_set<string>* > word_dict_data(word, id4_set);
                     word_dict.insert(word_dict_data);
                 }
                 else
                 {
-                    current_set = word_dict[word];
-                    current_set.insert(id_date);
-                    word_dict[word] = current_set;
+                    word_dict[word]->insert(id4);
                 }
                 first_index = index + 1; // first index of the next word
             }
@@ -175,23 +169,26 @@ MailDB::add(string& path)
                 word = converted_content.substr(first_index, index - first_index + 1);
                 if (word_dict.find(word) == word_dict.end()) // new word
                 {
-                    pair < string, unordered_set<string> > word_dict_data(word, id_date_set);
+                    unordered_set< string > *id4_set = new unordered_set< string >({id4});
+                    pair < string, unordered_set<string>* > word_dict_data(word, id4_set);
                     word_dict.insert(word_dict_data);
                 }
                 else
                 {
-                    current_set = word_dict[word];
-                    current_set.insert(id_date);
-                    word_dict[word] = current_set;
+                    word_dict[word]->insert(id4);
                 }
                 char_count++;
             }
             else
                 char_count++;
+            
         }
         vector<int> char_count_id(2, 0);
         char_count_id[0] = char_count;
-        char_count_id[1] = 10000 - stoi(id5); // 為了讓 id 比較小的能排到最後面
+        if (id4 == "0000")
+            char_count_id[1] = 0;
+        else
+            char_count_id[1] = 10000 - stoi(id4); // 為了讓 id 比較小的能排到最後面
         longest_set.insert(char_count_id);
         
         // subject
@@ -225,14 +222,13 @@ MailDB::add(string& path)
                 word = converted_subject.substr(first_index, index - first_index);
                 if (word_dict.find(word) == word_dict.end()) // new word
                 {
-                    pair < string, unordered_set<string> > word_dict_data(word, id_date_set);
+                    unordered_set< string > *id4_set = new unordered_set< string >({id4});
+                    pair < string, unordered_set<string>* > word_dict_data(word, id4_set);
                     word_dict.insert(word_dict_data);
                 }
                 else
                 {
-                    current_set = word_dict[word];
-                    current_set.insert(id_date);
-                    word_dict[word] = current_set;
+                    word_dict[word]->insert(id4);
                 }
                 first_index = index + 1; // first index of the next word
             }
@@ -241,27 +237,27 @@ MailDB::add(string& path)
                 word = converted_subject.substr(first_index, index - first_index + 1);
                 if (word_dict.find(word) == word_dict.end()) // new word
                 {
-                    pair < string, unordered_set<string> > word_dict_data(word, id_date_set);
+                    unordered_set< string > *id4_set = new unordered_set< string >({id4});
+                    pair < string, unordered_set<string>* > word_dict_data(word, id4_set);
                     word_dict.insert(word_dict_data);
                 }
                 else
                 {
-                    current_set = word_dict[word];
-                    current_set.insert(id_date);
-                    word_dict[word] = current_set;
+                    word_dict[word]->insert(id4);
                 }
             }
         }
         
         // data 分別裝 From / Date / Subject / To / Content
-        vector<string> data(5, "data");
-        data[0] = from ;
-        data[1] = date;
-        data[2] = subject;
-        data[3] = to;
-        data[4] = converted_content; // 更新 content
-        pair <string, vector<string>> database_data(id5, data);
+        vector<string>* data = new vector<string>(5, "");
+        (*data)[0] = from ;
+        (*data)[1] = date;
+        (*data)[2] = converted_subject;
+        (*data)[3] = to;
+        (*data)[4] = converted_content; // 更新 content
+        pair < string, vector<string>* > database_data(id4, data);
         database.insert(database_data); // 新增這筆資料
+        all_id.insert(id4);
     }
 }
 
@@ -276,36 +272,31 @@ MailDB::remove(unsigned id)
     if (iter != fileAdded.end())
         fileAdded.erase(iter);
     
-    string id5 = to_string(id);
-    if (id5.size() == 1)
-        id5 = "0000" + id5;
-    else if (id5.size() == 2)
-        id5 = "000" + id5;
-    else if (id5.size() == 3)
-        id5 = "00" + id5;
-    else if (id5.size() == 4)
-        id5 = "0" + id5;
+    string id4 = to_string(id);
+    if (id4.size() == 1)
+        id4 = "000" + id4;
+    else if (id4.size() == 2)
+        id4 = "00" + id4;
+    else if (id4.size() == 3)
+        id4 = "0" + id4;
+    else if (id4.size() == 5) // 10000
+        id4 = "0000";
     
-    if (database.find(id5) == database.end()) // 信件不存在
+    if (database.find(id4) == database.end()) // 信件不存在
         cout << "-" << "\n";
     else // 信件存在
     {
         cout << longest_set.size() - 1 << "\n";
-        string from = database[id5][0], date = database[id5][1], subject = database[id5][2], to = database[id5][3],              content = database[id5][4]; // database 中的所有資料皆已處理過
-        string id_date = id5 + date;
-        database.erase(id5);
+        string from = (*database[id4])[0], date = (*database[id4])[1], subject = (*database[id4])[2], to = (*database[id4])[3],              content = (*database[id4])[4]; // database 中的所有資料皆已處理過
+        database.erase(id4);
         unordered_set< string > current_set;
         
         // from_dict
-        current_set = from_dict[from];
-        current_set.erase(id_date);
-        from_dict[from] = current_set;
+        from_dict[from]->erase(id4);
         
         
         // to_dict
-        current_set = to_dict[to];
-        current_set.erase(id_date);
-        to_dict[to] = current_set;
+        to_dict[to]->erase(id4);
 
         
         // word_dict
@@ -316,17 +307,13 @@ MailDB::remove(unsigned id)
             if (content[index] == ' ') // space
             {
                 word = content.substr(first_index, index - first_index);
-                current_set = word_dict[word];
-                current_set.erase(id_date);
-                word_dict[word] = current_set;
+                word_dict[word]->erase(id4);
                 first_index = index + 1; // first index of the next word
             }
             else if (index == static_cast<int>(content.size()) - 1)
             {
                 word = content.substr(first_index, index - first_index + 1);
-                current_set = word_dict[word];
-                current_set.erase(id_date);
-                word_dict[word] = current_set;
+                word_dict[word]->erase(id4);
                 char_count++;
             }
             else
@@ -340,24 +327,24 @@ MailDB::remove(unsigned id)
             if (subject[index] == ' ') // space
             {
                 word = subject.substr(first_index, index - first_index);
-                current_set = word_dict[word];
-                current_set.erase(id_date);
-                word_dict[word] = current_set;
+                word_dict[word]->erase(id4);
                 first_index = index + 1; // first index of the next word
             }
             else if (index == static_cast<int>(subject.size()) - 1)
             {
                 word = subject.substr(first_index, index - first_index + 1);
-                current_set = word_dict[word];
-                current_set.erase(id_date);
-                word_dict[word] = current_set;
+                word_dict[word]->erase(id4);
             }
         }
         
         vector<int> char_count_id(2, 0);
         char_count_id[0] = char_count;
-        char_count_id[1] = 10000 - stoi(id5);
+        if (id4 == "0000")
+            char_count_id[1] = 0;
+        else
+            char_count_id[1] = 10000 - stoi(id4);
         longest_set.erase(char_count_id);
+        all_id.erase(id4);
     }
 }
 
@@ -423,9 +410,6 @@ MailDB::query(vector<string>& args, MODE mode)
 //        cerr << postorder[i].obj << " ";
 //    cerr << "\n";
     
-//    for (unordered_map<string, unordered_set<string>>::iterator element = word_dict.begin(); element != word_dict.end(); element++)
-//        cout << (*element).first << "\n" ; // print words in dict
-//    cout << word_dict["minas"].size() << "\n" ;
     // date
     string start_date = "000000000000", end_date = "999999999999"; // 一定會在這個範圍內
     if (date != " ") // 假設存為一字串（包含兩日期）
@@ -441,14 +425,22 @@ MailDB::query(vector<string>& args, MODE mode)
             start_date = date.substr(0, 12);
     }
     // expression
-    string word;
+    string word, ids;
     unordered_set<string> current_set, difference_set, bu_difference_set, next_set, common_set, id_set;
     stack< unordered_set<string> > id_stack;
     
     // 差集
-    for (unordered_map< string, vector<string> >::iterator element = database.begin(); element != database.end(); element++)
+    for (unordered_set<string>::iterator element = all_id.begin(); element != all_id.end(); element++)
     {
-        if ((*element).second[1] >= start_date and (*element).second[1] <= end_date)
+        if ((*database[*element])[1]  >= start_date and (*database[*element])[1] <= end_date)
+        {
+            difference_set.insert(*element); // 目前 database 中的所有 id
+        }
+    }
+    
+    for (unordered_map< string, vector<string>* >::iterator element = database.begin(); element != database.end(); element++)
+    {
+        if ((*((*element).second))[1] >= start_date and (*((*element).second))[1] <= end_date)
         {
             difference_set.insert((*element).first); // 目前 database 中的所有 id
         }
@@ -467,12 +459,14 @@ MailDB::query(vector<string>& args, MODE mode)
             for (int j = 0; j < static_cast<int>(postorder[i].obj.size()); j++)
                 word += tolower(postorder[i].obj[j]);
             if (word_dict.find(word) != word_dict.end()) // the word exists
-                current_set = word_dict[word]; // id & date
+            {
+                current_set = *(word_dict[word]); // id
+            }
             for (unordered_set<string>::iterator element = current_set.begin(); element != current_set.end(); element++)
             {
-                if ((*element).substr(5, 12) >= start_date and (*element).substr(5, 12) <= end_date) // 檢查是否符合時間
+                if ((*database[*element])[1] >= start_date and (*database[*element])[1] <= end_date) // 檢查是否符合時間
                 {
-                    id_set.insert((*element).substr(0, 5));
+                    id_set.insert(*element);
                 }
             }
             id_stack.push(id_set);
@@ -539,12 +533,11 @@ MailDB::query(vector<string>& args, MODE mode)
     unordered_set<string> from_id;
     if (from_dict.find(from) != from_dict.end()) // sender exists
     {
-        for (unordered_set<string>::iterator element = from_dict[from].begin(); element != from_dict[from].end(); element++)
+        for (unordered_set<string>::iterator element = (*from_dict[from]).begin(); element != (*from_dict[from]).end(); element++)
         {
-            if ((*element).substr(5, 12) >= start_date and (*element).substr(5, 12) <= end_date)
-                from_id.insert((*element).substr(0, 5));
+            if ((*database[*element])[1] >= start_date and (*database[*element])[1] <= end_date)
+                from_id.insert(*element);
         }
-        
     }
     if (from != "") // sender constraint exists
     {
@@ -566,10 +559,10 @@ MailDB::query(vector<string>& args, MODE mode)
     unordered_set<string> to_id;
     if (to_dict.find(to) != to_dict.end()) // receiver exists
     {
-        for (unordered_set<string>::iterator element = to_dict[to].begin(); element != to_dict[to].end(); element++)
+        for (unordered_set<string>::iterator element = (*to_dict[to]).begin(); element != (*to_dict[to]).end(); element++)
         {
-            if ((*element).substr(5, 12) >= start_date and (*element).substr(5, 12) <= end_date)
-                to_id.insert((*element).substr(0, 5));
+            if ((*database[*element])[1] >= start_date and (*database[*element])[1] <= end_date)
+                to_id.insert(*element);
         }
     }
     
@@ -608,7 +601,6 @@ MailDB::query(vector<string>& args, MODE mode)
             if (size != 0)
                 cout << " ";
         }
-            
         cout << "\n";
     }
 }

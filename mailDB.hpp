@@ -123,10 +123,12 @@ private:
 
     // [longest]
     //std::priority_queue<LENGTH, std::vector<LENGTH>, std::greater<int> > lengthHeap;
-    unordered_map< string, unordered_set<string> > from_dict; // pair 中裝著 id 及 date
-    unordered_map< string, unordered_set<string> > to_dict;
-    unordered_map< string, unordered_set<string> > word_dict;
-    unordered_map< string, vector<string> > database;
+    unordered_map< string, unordered_set<string>* > from_dict; // pair 中裝著 id 及 date
+    unordered_map< string, unordered_set<string>* > to_dict;
+    unordered_map< string, unordered_set<string>* > word_dict;
+    unordered_map< string, vector<string>* > database;
+        
+    unordered_set<string> all_id;
     set < vector<int> > longest_set;
 
     // [query]
