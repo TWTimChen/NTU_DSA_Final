@@ -1,8 +1,19 @@
-run: mailDB cmdParser.cpp
-	g++ cmdParser.cpp mailDB.o -o $@
 
-mailDB: mailDB.h mailDB.cpp
-	g++ mailDB.cpp -c
+CXX=g++
+CFLAGS= -Wall -std=c++11 -Os
+EXEC=run
+
+all: run
+
+debug: CFLAGS += -DDEBUG
+debug: clean
+debug: run
+
+run: mailDB.o 
+	$(CXX) $(CFLAGS) main.cpp mailDB.o -o $(EXEC)
+
+mailDB.o: mailDB.cpp
+	$(CXX) -c $(CFLAGS) mailDB.cpp
 
 clean:
-	rm -f mailDB.o run
+	rm -f $(EXEC) *.o
